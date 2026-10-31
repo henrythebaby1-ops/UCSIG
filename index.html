@@ -1,0 +1,1516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Using Coding Skills In Games</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a game cartridge shelf (level map) and a two-column workbench: lesson + code editor on the left, live stage + console on the right. */
+:root {
+  --bg: #11132a;
+  --panel: #1a1d3c;
+  --panel-2: #232852;
+  --line: #333a72;
+  --ink: #eceaf8;
+  --muted: #9ea1cc;
+  --accent: #ffb547;
+  --accent-ink: #2a1a00;
+  --code: #57d6c2;
+  --danger: #ff6b7a;
+  --good: #7be08f;
+  --f-display: "Silkscreen", "Courier New", monospace;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 40px;
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(87,214,194,.08), transparent 40%),
+    radial-gradient(circle at 90% 10%, rgba(255,181,71,.07), transparent 35%);
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, canvas:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, pre { font-family: var(--f-code); }
+.wrap { max-width: 1240px; margin: 0 auto; }
+
+/* Top bar */
+.topbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.brand { font-family: var(--f-display); font-size: 14px; letter-spacing: .04em; color: var(--accent); display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; }
+.brand .chip { display: inline-grid; place-items: center; width: 28px; height: 28px; background: var(--accent); color: var(--accent-ink); border-radius: 4px; font-size: 12px; }
+.progress { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.bar { width: 140px; height: 8px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--good); width: 0; transition: width .4s; }
+
+/* Map */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: center; margin-bottom: 36px; }
+.hero h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 5vw, 54px); line-height: 1.05; margin: 0 0 14px; text-wrap: balance; letter-spacing: -.01em; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--muted); max-width: 56ch; margin: 0 0 18px; font-size: 16px; }
+.mechanics { display: flex; flex-wrap: wrap; gap: 8px; }
+.mech { font-size: 12px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); }
+.hero-term { background: #0b0d1e; border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; font-family: var(--f-code); font-size: 13px; line-height: 1.7; min-width: 0; overflow-x: auto; }
+.hero-term .c { color: var(--muted); }
+.hero-term .k { color: var(--accent); }
+.hero-term .f { color: var(--code); }
+.hero-term .s { color: var(--good); }
+.cta { margin-top: 20px; }
+
+.lang-section { margin-bottom: 28px; }
+.lang-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.lang-head h2 { font-family: var(--f-display); font-size: 16px; margin: 0; letter-spacing: .03em; }
+.lang-head .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.lang-head small { color: var(--muted); font-size: 13px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.card { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 14px 12px; display: grid; gap: 6px; position: relative; transition: transform .15s, border-color .15s; }
+.card:hover { transform: translateY(-2px); border-color: var(--lc, var(--accent)); }
+.card .num { font-family: var(--f-display); font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+.card .t { font-weight: 700; font-size: 16px; }
+.card .b { font-size: 12px; color: var(--muted); }
+.card .done { position: absolute; top: 12px; right: 12px; font-family: var(--f-display); font-size: 10px; color: var(--good); letter-spacing: .06em; }
+.card::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; background: var(--lc); border-radius: 0 2px 2px 0; }
+
+/* Buttons */
+.btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 8px 14px; font-size: 14px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+
+/* Play screen */
+.play-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
+.play-head h2 { font-family: var(--f-display); font-size: clamp(18px, 2.4vw, 24px); margin: 0; }
+.pill { font-family: var(--f-display); font-size: 11px; padding: 3px 8px; border-radius: 3px; color: #121212; letter-spacing: .04em; }
+.pill.soft { background: var(--panel-2); color: var(--muted); }
+.play-nav { margin-left: auto; display: flex; gap: 8px; }
+.play { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
+.lesson h3 { font-family: var(--f-display); font-size: 12px; color: var(--muted); letter-spacing: .08em; margin: 0 0 6px; font-weight: 400; }
+.lesson p { margin: 0 0 10px; }
+.lesson pre { background: #0b0d1e; border: 1px solid var(--line); border-radius: 5px; padding: 10px 12px; font-size: 13px; overflow-x: auto; margin: 0 0 10px; color: var(--code); }
+.lesson code { font-size: .92em; background: var(--panel-2); padding: 1px 5px; border-radius: 3px; }
+.lesson pre code { background: none; padding: 0; }
+.task { border-top: 1px dashed var(--line); padding-top: 10px; margin-top: 4px; }
+.task strong { color: var(--accent); }
+
+.editor { background: #0b0d1e; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ed-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 13px; }
+.ed-head .fname { font-family: var(--f-code); color: var(--muted); }
+.ed-head .btn { margin-left: auto; padding: 4px 10px; font-size: 12px; }
+.ed-body { display: flex; position: relative; height: 300px; }
+.gutter { margin: 0; padding: 12px 8px 12px 10px; text-align: right; color: #4d5390; font-size: 13px; line-height: 1.6; user-select: none; overflow: hidden; min-width: 36px; border-right: 1px solid #1d2147; }
+#code { flex: 1; min-width: 0; resize: none; border: 0; outline: none; background: transparent; color: var(--ink); font-family: var(--f-code); font-size: 13px; line-height: 1.6; padding: 12px; tab-size: 4; white-space: pre; overflow: auto; caret-color: var(--accent); }
+#code:focus-visible { outline: none; }
+.editor:focus-within { border-color: var(--accent); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.actions .kbd { color: var(--muted); font-size: 12px; margin-left: auto; }
+
+.stage { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; position: relative; }
+.stage-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.stage-head .coords { margin-left: auto; font-family: var(--f-code); color: var(--code); font-variant-numeric: tabular-nums; }
+canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; background: #0d1024; touch-action: none; }
+.touch { display: none; gap: 10px; padding: 10px; justify-content: space-between; }
+.touch button { width: 64px; height: 52px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--line); font-size: 20px; user-select: none; -webkit-user-select: none; touch-action: none; }
+@media (pointer: coarse), (max-width: 900px) { .touch { display: flex; } }
+.question { padding: 22px 22px 26px; display: grid; gap: 14px; }
+.question .qlabel { font-family: var(--f-display); color: var(--accent); font-size: 12px; letter-spacing: .08em; }
+.question .qtext { font-size: 19px; font-weight: 700; max-width: 52ch; text-wrap: balance; }
+.question .expect { font-family: var(--f-code); font-size: 13px; color: var(--muted); }
+.question .expect b { color: var(--good); font-weight: 600; white-space: pre; }
+.preview { padding: 14px; }
+.browser { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #fff; }
+.browser .url { background: #e9e8f2; color: #555; font: 12px var(--f-code); padding: 6px 10px; display: flex; gap: 6px; align-items: center; }
+.browser .url i { width: 9px; height: 9px; border-radius: 50%; background: #c9c7d8; display: inline-block; }
+#previewHost { min-height: 220px; display: block; }
+
+.win { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 12, 30, .82); backdrop-filter: blur(2px); z-index: 5; }
+.win-box { text-align: center; padding: 20px; display: grid; gap: 12px; justify-items: center; }
+.win-box .big { font-family: var(--f-display); font-size: clamp(26px, 4vw, 40px); color: var(--good); }
+.win-box p { margin: 0; color: var(--muted); max-width: 40ch; }
+.win-box .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+@media (prefers-reduced-motion: no-preference) { .win-box .big { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); } }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.console { background: #0b0d1e; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.console-head { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--panel); border-bottom: 1px solid var(--line); font-family: var(--f-display); font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+.console-head .btn { margin-left: auto; padding: 2px 8px; font-size: 11px; font-family: var(--f-body); letter-spacing: 0; }
+#consoleOut { margin: 0; padding: 10px 12px; min-height: 120px; max-height: 240px; overflow: auto; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+#consoleOut .out { color: var(--ink); }
+#consoleOut .info { color: var(--muted); }
+#consoleOut .err { color: var(--danger); }
+#consoleOut .ok { color: var(--good); }
+#consoleOut .warn { color: var(--accent); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .play { display: flex; flex-direction: column; }
+  .col { display: contents; }
+  .lesson { order: 1; } .stage { order: 2; } .editor { order: 3; } .actions { order: 4; } .console { order: 5; }
+  .ed-body { height: 240px; }
+  .actions .kbd { display: none; }
+  .bar { width: 90px; }
+}
+@media (prefers-reduced-motion: reduce) { .card, .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="topbar">
+    <button class="brand" id="homeBtn" aria-label="Back to level map"><span class="chip">&lt;/&gt;</span>USING CODING SKILLS IN GAMES</button>
+    <div class="progress"><span id="progText">0 / 14 levels</span><div class="bar"><i id="progBar"></i></div></div>
+  </header>
+
+  <section id="mapScreen">
+    <div class="hero">
+      <div>
+        <h1>Using Coding Skills <span>In Games</span></h1>
+        <p>Every level is solved by writing real code. Print answers to the console, build platforms with function calls, bend gravity with a variable, fix buggy loops and style the level with CSS, across seven languages.</p>
+        <div class="mechanics">
+          <span class="mech">Console quests</span><span class="mech">Build platforms</span><span class="mech">Change physics</span><span class="mech">Fix the bug</span><span class="mech">Make a web page</span><span class="mech">Style the level</span>
+        </div>
+        <div class="cta"><button class="btn primary" id="continueBtn">Start level 1</button></div>
+      </div>
+      <pre class="hero-term"><span class="c">// a staircase, built with a loop</span>
+<span class="k">for</span> (<span class="k">let</span> i = 0; i &lt; 5; i++) {
+  <span class="f">createPlatform</span>(120 + i * 80, 360 - i * 45, 70);
+}
+<span class="c"># same idea in Python</span>
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(5):
+    <span class="f">create_platform</span>(120 + i * 80, 360 - i * 45, 70)
+<span class="c">// and the console</span>
+<span class="f">printf</span>(<span class="s">"Score: %d\n"</span>, score);</pre>
+    </div>
+    <div id="levelList"></div>
+  </section>
+
+  <section id="playScreen" hidden>
+    <div class="play-head">
+      <span class="pill" id="lvLang">JS</span>
+      <span class="pill soft" id="lvBadge">Console quest</span>
+      <h2 id="lvTitle">Level</h2>
+      <div class="play-nav">
+        <button class="btn ghost" id="prevBtn">&larr; Prev</button>
+        <button class="btn ghost" id="mapBtn">All levels</button>
+        <button class="btn ghost" id="nextBtn">Next &rarr;</button>
+      </div>
+    </div>
+    <div class="play">
+      <div class="col">
+        <div class="lesson" id="lesson"></div>
+        <div class="editor">
+          <div class="ed-head"><span class="pill" id="edLang">JS</span><span class="fname" id="fname">main.js</span><button class="btn" id="resetCode">Reset code</button></div>
+          <div class="ed-body"><pre class="gutter" id="gutter">1</pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code editor"></textarea></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="runBtn">&#9654; Run code</button>
+          <button class="btn" id="hintBtn">Hint</button>
+          <button class="btn" id="solBtn">Show solution</button>
+          <span class="kbd">Ctrl / &#8984; + Enter runs</span>
+        </div>
+      </div>
+      <div class="col">
+        <div class="stage" id="stage">
+          <div class="stage-head"><span id="stageLabel">Game</span><span class="coords" id="coords"></span></div>
+          <div id="gameWrap">
+            <canvas id="game" width="800" height="450" tabindex="0" aria-label="Platformer game. Use arrow keys or A and D to move, Space or Up to jump."></canvas>
+            <div class="touch">
+              <div style="display:flex;gap:10px"><button id="tLeft" aria-label="Move left">&#9664;</button><button id="tRight" aria-label="Move right">&#9654;</button></div>
+              <button id="tJump" aria-label="Jump">&#10514;</button>
+            </div>
+          </div>
+          <div class="question" id="questionWrap" hidden>
+            <div class="qlabel">QUEST</div>
+            <div class="qtext" id="qtext"></div>
+            <div class="expect" id="qexpect"></div>
+          </div>
+          <div class="preview" id="previewWrap" hidden>
+            <div class="browser"><div class="url"><i></i><i></i><i></i><span>code-quest.local/index.html</span></div><div id="previewHost"></div></div>
+          </div>
+          <div class="win" id="win" hidden>
+            <div class="win-box">
+              <div class="big">LEVEL CLEAR</div>
+              <p id="winMsg">Nice coding.</p>
+              <div class="row"><button class="btn" id="winStay">Stay here</button><button class="btn primary" id="winNext">Next level &rarr;</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="console">
+          <div class="console-head">CONSOLE<button class="btn" id="clearBtn">Clear</button></div>
+          <pre id="consoleOut" aria-live="polite"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------------- Languages ---------------- */
+const LANGS = {
+  js:   { name: 'JavaScript', short: 'JS',   color: '#f7df1e', file: 'main.js',    blurb: 'The language of the web and browser games.' },
+  py:   { name: 'Python',     short: 'PY',   color: '#6aaef0', file: 'main.py',    blurb: 'Readable, uses indentation instead of braces.' },
+  html: { name: 'HTML',       short: 'HTML', color: '#f37148', file: 'index.html', blurb: 'Describes the structure of web pages with tags.' },
+  css:  { name: 'CSS',        short: 'CSS',  color: '#8b9dff', file: 'style.css',  blurb: 'Styles HTML: size, position, color, visibility.' },
+  c:    { name: 'C',          short: 'C',    color: '#c3cfdf', file: 'main.c',     blurb: 'Small and fast. Many game engines started here.' },
+  cpp:  { name: 'C++',        short: 'C++',  color: '#7fb4ee', file: 'main.cpp',   blurb: 'Powers Unreal Engine and most AAA games.' },
+  java: { name: 'Java',       short: 'JAVA', color: '#f8a64a', file: 'Main.java',  blurb: 'The language Minecraft: Java Edition is written in.' },
+};
+
+/* ---------------- Levels ---------------- */
+const LEVELS = [
+  {
+    id: 'js-hello', lang: 'js', type: 'console', badge: 'Console quest', title: 'Hello, Console',
+    learn: String.raw`<p><code>console.log()</code> prints a message to the console. Text inside quotes is called a <em>string</em>. In JavaScript a statement usually ends with a semicolon.</p><pre><code>console.log("I am learning JavaScript");</code></pre>`,
+    task: 'Print exactly <strong>Hello, World!</strong> to the console.',
+    question: 'The game needs to greet the player. Print the greeting to the console.',
+    expect: 'Hello, World!',
+    starter: String.raw`// Write your JavaScript below
+`,
+    hint: 'Put the text in quotes inside the parentheses: console.log("...");',
+    solution: String.raw`console.log("Hello, World!");`,
+    check(r, src) {
+      if (!/console\s*\.\s*log/.test(src)) return 'Use console.log(...) to print the message.';
+      if (!hasLine(r.output, 'Hello, World!')) return 'The console should show exactly: Hello, World! (capital H, capital W, comma and exclamation mark).';
+    },
+  },
+  {
+    id: 'js-platform', lang: 'js', type: 'platformer', badge: 'Build platforms', title: 'Mind the Gap',
+    learn: String.raw`<p>A <em>function call</em> runs a named piece of code. You pass it <em>arguments</em> inside the parentheses, separated by commas.</p><pre><code>createPlatform(x, y, width);</code></pre><p>Game screens count <code>y</code> downward: <code>y = 0</code> is the top and the ground is at <code>y = 400</code>. Hover over the game to read coordinates.</p>`,
+    task: 'The gap is too wide to jump. Call <strong>createPlatform</strong> to build a bridge, press Run, then walk to the flag.',
+    world: { ground: [[0, 250], [550, 800]], flag: [740, 400] },
+    platforms: true,
+    starter: String.raw`// The gap between x = 250 and x = 550 is too wide to jump.
+// createPlatform(x, y, width) builds a platform.
+// Example: createPlatform(100, 300, 120);
+
+`,
+    hint: 'Start the platform at the edge of the gap (x = 250), put it on the ground line (y = 400) and make it 300 wide.',
+    solution: String.raw`createPlatform(250, 400, 300);`,
+    require(r) { if (!r.platforms.length) return 'Call createPlatform(x, y, width) to build at least one platform.'; },
+  },
+  {
+    id: 'js-vars', lang: 'js', type: 'platformer', badge: 'Change physics', title: 'Super Jump',
+    learn: String.raw`<p>A <em>variable</em> is a named box that stores a value. In JavaScript you create one with <code>let</code>. The game reads your variables to set its physics.</p><pre><code>let score = 0;
+let playerName = "Ada";</code></pre>`,
+    task: 'The ledge is 180 pixels high but your jump only reaches about 100. Change <strong>jumpPower</strong>, run, and jump onto the ledge.',
+    world: { ground: [[0, 800]], blocks: [{ x: 430, y: 220, w: 370, h: 180 }], flag: [740, 220] },
+    platforms: false, lockMsg: 'createPlatform is locked in this level. Change the jumpPower variable instead.',
+    vars: { jumpPower: { def: 11, min: 4, max: 20, phys: 'jump' } },
+    starter: String.raw`// jumpPower sets how hard the player jumps.
+// The game reads this variable when you press Run.
+let jumpPower = 10;
+`,
+    hint: 'Bigger numbers jump higher. Anything from 16 to 20 clears the ledge.',
+    solution: String.raw`let jumpPower = 17;`,
+    require(r) {
+      if (r.vars.jumpPower === undefined) return 'Create a variable named jumpPower, for example: let jumpPower = 17;';
+      if (typeof r.vars.jumpPower !== 'number' || !isFinite(r.vars.jumpPower)) return 'jumpPower must be a number, without quotes.';
+    },
+  },
+  {
+    id: 'py-coins', lang: 'py', type: 'console', badge: 'Console quest', title: 'Count the Coins',
+    learn: String.raw`<p>Python creates a variable as soon as you assign it, with no <code>let</code> and no semicolons. <code>*</code> multiplies and <code>print()</code> writes to the console.</p><pre><code>lives = 3
+print(lives * 2)</code></pre>`,
+    task: 'Store the total number of coins in a variable named <strong>coins</strong>, then print it.',
+    question: 'A treasure chest holds 12 rows of 7 gold coins. How many coins are in the chest?',
+    expect: '84',
+    vars: ['coins'],
+    starter: String.raw`# 12 rows of 7 coins each
+# Make a variable called coins and print it
+`,
+    hint: 'coins = 12 * 7 on one line, then print(coins) on the next.',
+    solution: String.raw`coins = 12 * 7
+print(coins)`,
+    check(r, src) {
+      if (r.vars.coins === undefined) return 'Create a variable named coins.';
+      if (r.vars.coins !== 84) return 'coins holds ' + pyRepr(r.vars.coins, false) + '. Let Python do the math: coins = 12 * 7';
+      if (!/\bprint\s*\(/.test(src)) return 'Use print(...) to show the answer.';
+      if (!hasLine(r.output, '84')) return 'Print the value of coins so the console shows 84.';
+    },
+  },
+  {
+    id: 'py-stairs', lang: 'py', type: 'platformer', badge: 'Build with loops', title: 'Tower Stairs',
+    learn: String.raw`<p>A <code>for</code> loop repeats the indented lines under it. <code>range(5)</code> counts 0, 1, 2, 3, 4, so <code>i</code> changes every time round. Python uses <em>indentation</em> (4 spaces) to show what belongs to the loop.</p><pre><code>for i in range(3):
+    print("step", i)</code></pre>`,
+    task: 'Use a loop and <strong>create_platform(x, y, width)</strong> to build a staircase up to the top of the tower.',
+    world: { ground: [[0, 800]], blocks: [{ x: 520, y: 160, w: 280, h: 240 }], flag: [750, 160] },
+    platforms: true,
+    starter: String.raw`# The tower top is at y = 160. Your jump reaches about 100 pixels.
+# Each step should be further right (bigger x) and higher (smaller y).
+for i in range(5):
+    # replace pass with create_platform(x, y, width) using i
+    pass
+`,
+    hint: 'Try create_platform(120 + i * 80, 360 - i * 45, 70). When i = 0 that is (120, 360); when i = 4 it is (440, 180).',
+    solution: String.raw`for i in range(5):
+    create_platform(120 + i * 80, 360 - i * 45, 70)`,
+    require(r, src) {
+      if (!/^\s*(for|while)\b/m.test(src)) return 'This level wants a loop. Use for i in range(...): to build the steps.';
+      if (r.platforms.length < 4) return 'Your loop built ' + r.platforms.length + ' platform(s). Build at least 4 steps.';
+    },
+  },
+  {
+    id: 'html-divs', lang: 'html', type: 'platformer', badge: 'Build with tags', title: 'Div Bridges',
+    learn: String.raw`<p>HTML is made of <em>tags</em>. Most come in pairs: an opening <code>&lt;div&gt;</code> and a closing <code>&lt;/div&gt;</code>. <em>Attributes</em> go inside the opening tag. Here, every <code>div</code> with <code>class="platform"</code> becomes a platform, and its <code>style</code> sets the position.</p><pre><code>&lt;div class="platform" style="left: 100px; top: 300px; width: 120px"&gt;&lt;/div&gt;</code></pre>`,
+    task: 'There are two gaps. Fix the first div (it floats far too high) and add a second one.',
+    world: { ground: [[0, 180], [380, 460], [660, 800]], flag: [760, 400] },
+    platforms: true,
+    starter: String.raw`<!-- Each div with class="platform" becomes a platform -->
+<!-- left = x, top = y, width = size (all in px) -->
+<!-- Gaps: from x 180 to 380, and from x 460 to 660 -->
+<div class="platform" style="left: 180px; top: 120px; width: 200px"></div>
+`,
+    hint: 'The ground is at top: 400px. Change the first div to top: 400px, then copy it with left: 460px.',
+    solution: String.raw`<div class="platform" style="left: 180px; top: 400px; width: 200px"></div>
+<div class="platform" style="left: 460px; top: 400px; width: 200px"></div>`,
+    require(r) { if (r.platforms.length < 2) return 'Make two divs with class="platform", one for each gap.'; },
+  },
+  {
+    id: 'html-page', lang: 'html', type: 'web', badge: 'Make a web page', title: 'Title Screen',
+    learn: String.raw`<p>Web pages use tags for each kind of content: <code>&lt;h1&gt;</code> is the biggest heading, <code>&lt;p&gt;</code> is a paragraph and <code>&lt;button&gt;</code> is a clickable button. You can add a <code>&lt;style&gt;</code> tag to color things.</p><pre><code>&lt;h1&gt;My Game&lt;/h1&gt;
+&lt;p&gt;Collect every star.&lt;/p&gt;</code></pre>`,
+    task: 'Build a title screen with an <strong>h1</strong> that says <strong>Code Quest</strong>, a <strong>p</strong> paragraph describing the game, and a <strong>button</strong> that says <strong>Start</strong>.',
+    starter: String.raw`<!-- Build the title screen for your game -->
+<h1>My Game</h1>
+`,
+    hint: 'Change the h1 text to Code Quest, then add <p>...</p> and <button>Start</button> under it.',
+    solution: String.raw`<style>
+  body { font-family: sans-serif; text-align: center; padding: 20px; }
+  button { font-size: 18px; padding: 8px 24px; }
+</style>
+<h1>Code Quest</h1>
+<p>Write code to beat every level.</p>
+<button>Start</button>`,
+    check(r) {
+      const d = r.doc; if (!d) return 'Write some HTML first.';
+      const h1 = d.querySelector('h1');
+      if (!h1) return 'Add an <h1> heading.';
+      if (h1.textContent.trim().toLowerCase() !== 'code quest') return 'The h1 should say Code Quest. Right now it says: ' + h1.textContent.trim();
+      const p = d.querySelector('p');
+      if (!p || !p.textContent.trim()) return 'Add a <p> paragraph with some text in it.';
+      const b = d.querySelector('button');
+      if (!b) return 'Add a <button>.';
+      if (b.textContent.trim().toLowerCase() !== 'start') return 'The button text should be Start.';
+    },
+  },
+  {
+    id: 'css-door', lang: 'css', type: 'platformer', badge: 'Style the level', title: 'Locked Door',
+    learn: String.raw`<p>CSS picks elements with a <em>selector</em> and changes them with <em>property: value;</em> pairs inside braces. <code>#name</code> selects by id, <code>.name</code> selects by class.</p><pre><code>#door { display: none; }
+.bridge { width: 300px; }</code></pre><p>This level is built from elements named <code>#door</code> and <code>.bridge</code>.</p>`,
+    task: 'Hide the <strong>#door</strong> and make the <strong>.bridge</strong> wide enough to cross, then reach the flag.',
+    world: {
+      ground: [[0, 520], [760, 800]], flag: [772, 400],
+      blocks: [
+        { x: 360, y: 190, w: 34, h: 210, id: 'door', kind: 'door' },
+        { x: 520, y: 400, w: 60, h: 16, cls: 'bridge', kind: 'bridge' },
+      ],
+    },
+    platforms: false,
+    starter: String.raw`/* #door blocks the path. .bridge is too short to cross the pit. */
+#door {
+  display: block;
+}
+
+.bridge {
+  width: 60px;
+}
+`,
+    hint: 'Set display: none; on #door. The pit is 240px wide, so give .bridge a width of 240px.',
+    solution: String.raw`#door {
+  display: none;
+}
+
+.bridge {
+  width: 240px;
+}`,
+  },
+  {
+    id: 'c-printf', lang: 'c', type: 'console', badge: 'Console quest', title: 'Score Board',
+    learn: String.raw`<p>C programs start in <code>main()</code>. <code>printf</code> prints formatted text: <code>%d</code> is a placeholder that gets replaced by a whole number, and <code>\n</code> starts a new line. Every statement ends with <code>;</code>.</p><pre><code>int lives = 3;
+printf("Lives: %d\n", lives);</code></pre>`,
+    task: 'Print <strong>Score: 100</strong> using printf with <strong>%d</strong> and the score variable.',
+    question: 'The scoreboard is blank. Print the player\'s score using the score variable.',
+    expect: 'Score: 100',
+    starter: String.raw`#include <stdio.h>
+
+int main() {
+    int score = 100;
+    // print "Score: 100" using printf and %d
+
+    return 0;
+}
+`,
+    hint: 'printf("Score: %d\n", score);',
+    solution: String.raw`#include <stdio.h>
+
+int main() {
+    int score = 100;
+    printf("Score: %d\n", score);
+    return 0;
+}`,
+    check(r, src) {
+      if (!/printf\s*\(/.test(src)) return 'Use printf(...) to print.';
+      if (!/%d/.test(src)) return 'Use the %d placeholder instead of typing 100 directly.';
+      if (!hasLine(r.output, 'Score: 100')) return 'The console should show exactly: Score: 100';
+    },
+  },
+  {
+    id: 'c-bridge', lang: 'c', type: 'platformer', badge: 'Build with loops', title: 'Spike Pit',
+    learn: String.raw`<p>A C <code>for</code> loop has three parts: start, condition and step. This one runs while <code>i &lt; 4</code>, so <code>i</code> is 0, 1, 2, 3.</p><pre><code>for (int i = 0; i &lt; 4; i++) {
+    // repeated code
+}</code></pre>`,
+    task: 'The loop builds a bridge of blocks, but it stops too early. Change the loop so the bridge reaches the far side.',
+    world: { ground: [[0, 150], [700, 800]], spikes: [[150, 550]], flag: [760, 400] },
+    platforms: true,
+    starter: String.raw`// Build a bridge of blocks across the spike pit.
+// The pit runs from x = 150 to x = 700.
+int main() {
+    for (int i = 0; i < 3; i++) {
+        createPlatform(150 + i * 90, 400, 80);
+    }
+    return 0;
+}
+`,
+    hint: 'Each block is 90 pixels further along. The pit is 550 wide, so you need about 6 or 7 blocks: try i < 7.',
+    solution: String.raw`int main() {
+    for (int i = 0; i < 7; i++) {
+        createPlatform(150 + i * 90, 400, 80);
+    }
+    return 0;
+}`,
+    require(r, src) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Keep the for loop. This level is about loops.';
+      if (r.platforms.length < 6) return 'Your loop built ' + r.platforms.length + ' block(s). The bridge needs at least 6.';
+    },
+  },
+  {
+    id: 'cpp-bug', lang: 'cpp', type: 'console', badge: 'Fix the bug', title: 'Off by One',
+    learn: String.raw`<p>C++ prints with <code>cout</code> and the <code>&lt;&lt;</code> operator. <code>endl</code> ends the line. A very common bug is the <em>off-by-one</em> error: a loop that runs one time too few or too many.</p><pre><code>cout &lt;&lt; "HP: " &lt;&lt; hp &lt;&lt; endl;</code></pre>`,
+    task: 'The countdown should print the numbers <strong>1 to 5</strong>, one per line. It only prints 1 to 4. Find and fix the bug.',
+    question: 'The launch countdown is broken. It must print 1, 2, 3, 4, 5, each on its own line.',
+    expect: '1\n2\n3\n4\n5',
+    starter: String.raw`#include <iostream>
+using namespace std;
+
+int main() {
+    // BUG: this should print 1 to 5
+    for (int i = 1; i < 5; i++) {
+        cout << i << endl;
+    }
+    return 0;
+}
+`,
+    hint: 'The loop stops when i < 5 is false, so 5 is never printed. Use i <= 5.',
+    solution: String.raw`#include <iostream>
+using namespace std;
+
+int main() {
+    for (int i = 1; i <= 5; i++) {
+        cout << i << endl;
+    }
+    return 0;
+}`,
+    check(r, src) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Keep using a loop to print the numbers.';
+      if (norm(r.output) !== '1\n2\n3\n4\n5') return 'The output should be exactly 1 to 5, one number per line.';
+    },
+  },
+  {
+    id: 'cpp-gravity', lang: 'cpp', type: 'platformer', badge: 'Change physics', title: 'Moon Gravity',
+    learn: String.raw`<p>C++ variables have a <em>type</em>. <code>int</code> holds whole numbers and <code>double</code> holds decimals like <code>0.5</code>. Game engines run physics every frame: gravity is added to your falling speed 60 times a second.</p><pre><code>int lives = 3;
+double speed = 2.5;</code></pre>`,
+    task: 'The canyon is 360 pixels wide, but you can only jump about 150. Lower <strong>gravity</strong> so you float across.',
+    world: { ground: [[0, 200], [560, 800]], flag: [740, 400], spikes: [[200, 360]] },
+    platforms: false, lockMsg: 'createPlatform is locked in this level. Change gravity instead.',
+    vars: { gravity: { def: 0.6, min: 0.12, max: 1.5, phys: 'g' } },
+    starter: String.raw`// Earth gravity is too strong to cross the canyon.
+// The game reads this variable when you press Run.
+double gravity = 0.6;
+`,
+    hint: 'Smaller gravity means longer jumps. Try 0.2, then take a running jump from the edge.',
+    solution: String.raw`double gravity = 0.2;`,
+    require(r) {
+      if (r.vars.gravity === undefined) return 'Create a variable named gravity, for example: double gravity = 0.2;';
+      if (typeof r.vars.gravity !== 'number' || !isFinite(r.vars.gravity)) return 'gravity must be a number.';
+    },
+  },
+  {
+    id: 'java-shop', lang: 'java', type: 'console', badge: 'Console quest', title: 'The Sword Shop',
+    learn: String.raw`<p>Java code lives inside a class, and the program starts in <code>main</code>. <code>if</code> runs code only when a condition is true; <code>else</code> runs when it is false. <code>System.out.println</code> prints a line.</p><pre><code>if (hp &lt;= 0) {
+    System.out.println("Game over");
+} else {
+    System.out.println("Keep going");
+}</code></pre>`,
+    task: 'Print <strong>Buy sword</strong> if coins is at least the price, otherwise print <strong>Keep saving</strong>. The game also tests your code with only 30 coins.',
+    question: 'A sword costs 50 coins and you have 75. Should you buy it? Your code must decide with if / else.',
+    expect: 'Buy sword',
+    starter: String.raw`public class Main {
+    public static void main(String[] args) {
+        int coins = 75;
+        int price = 50;
+        // use if / else to decide
+
+    }
+}
+`,
+    hint: 'if (coins >= price) { System.out.println("Buy sword"); } else { System.out.println("Keep saving"); }',
+    solution: String.raw`public class Main {
+    public static void main(String[] args) {
+        int coins = 75;
+        int price = 50;
+        if (coins >= price) {
+            System.out.println("Buy sword");
+        } else {
+            System.out.println("Keep saving");
+        }
+    }
+}`,
+    check(r, src, ctx) {
+      if (!/\bif\s*\(/.test(src) || !/\belse\b/.test(src)) return 'Use both if and else.';
+      if (norm(r.output) !== 'Buy sword') return 'With 75 coins the console should show only: Buy sword';
+      if (!/coins\s*=\s*75/.test(src)) return 'Keep the line int coins = 75; so the game can test your code.';
+      const r2 = ctx.run(src.replace(/coins\s*=\s*75/, 'coins = 30'));
+      if (r2.error) return 'Test with 30 coins failed: ' + r2.error;
+      if (norm(r2.output) !== 'Keep saving') return 'Test with 30 coins printed "' + norm(r2.output) + '" but it should print Keep saving. Compare coins with price instead of a fixed answer.';
+      ctx.log('Test: coins = 30 printed "Keep saving". Correct.', 'ok');
+    },
+  },
+  {
+    id: 'java-final', lang: 'java', type: 'platformer', badge: 'Final level', title: 'The Final Climb',
+    learn: String.raw`<p>Time to combine everything: a class, <code>main</code>, a <code>for</code> loop, variables and math. You can store numbers in variables to make your loop easier to read.</p><pre><code>int stepWidth = 75;
+for (int i = 0; i &lt; 6; i++) {
+    createPlatform(150 + i * 85, 370 - i * 25, stepWidth);
+}</code></pre>`,
+    task: 'Reach the flag on the high ledge (top at y = 250, starting at x = 660). The floor is spikes. Build your own path with a loop.',
+    world: { ground: [[0, 120]], blocks: [{ x: 660, y: 250, w: 140, h: 200 }], spikes: [[120, 540]], flag: [760, 250] },
+    platforms: true,
+    starter: String.raw`public class Main {
+    public static void main(String[] args) {
+        // FINAL LEVEL: reach the flag on the high ledge.
+        // You start on the ground at y = 400. The ledge top is y = 250.
+        // Use a loop and createPlatform(x, y, width).
+
+    }
+}
+`,
+    hint: 'Climb about 25 pixels per step while moving 85 pixels right: createPlatform(150 + i * 85, 370 - i * 25, 75) for i from 0 to 5.',
+    solution: String.raw`public class Main {
+    public static void main(String[] args) {
+        int stepWidth = 75;
+        for (int i = 0; i < 6; i++) {
+            createPlatform(150 + i * 85, 370 - i * 25, stepWidth);
+        }
+    }
+}`,
+    require(r, src) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop to build your path.';
+      if (r.platforms.length < 3) return 'Build at least 3 platforms.';
+    },
+  },
+];
+
+/* ---------------- Helpers ---------------- */
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const norm = (s) => String(s || '').replace(/\r/g, '').split('\n').map((l) => l.replace(/\s+$/, '')).join('\n').trim();
+const hasLine = (out, line) => norm(out).split('\n').some((l) => l.trim() === line);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+class GameError extends Error {}
+
+function store(key, val) {
+  try {
+    if (val === undefined) return JSON.parse(localStorage.getItem(key) || 'null');
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) { return null; }
+}
+
+/* ---------------- Value formatting per language ---------------- */
+function pyRepr(v, top) {
+  if (v === true) return 'True';
+  if (v === false) return 'False';
+  if (v === null || v === undefined) return 'None';
+  if (Array.isArray(v)) return '[' + v.map((x) => pyRepr(x, false)).join(', ') + ']';
+  if (typeof v === 'string') return top ? v : "'" + v + "'";
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+function jsRepr(v, top) {
+  if (typeof v === 'string') return top ? v : "'" + v + "'";
+  if (Array.isArray(v)) return '[ ' + v.map((x) => jsRepr(x, false)).join(', ') + ' ]';
+  if (v && typeof v === 'object') { try { return JSON.stringify(v); } catch (e) { return '[object]'; } }
+  return String(v);
+}
+function cRepr(v) {
+  if (v === true) return '1';
+  if (v === false) return '0';
+  return String(v);
+}
+function cFormat(fmt, args) {
+  let i = 0;
+  return String(fmt).replace(/%([-0]?)(\d*)(?:\.(\d+))?(?:l{0,2}|h)?([diufsc%])/g, (m, flag, width, prec, type) => {
+    if (type === '%') return '%';
+    let v = args[i++];
+    let s;
+    if (type === 'd' || type === 'i' || type === 'u') s = String(Math.trunc(Number(v)));
+    else if (type === 'f') s = Number(v).toFixed(prec === undefined ? 6 : Number(prec));
+    else if (type === 'c') s = typeof v === 'number' ? String.fromCharCode(v) : String(v);
+    else s = String(v);
+    if (width) s = flag === '-' ? s.padEnd(Number(width)) : s.padStart(Number(width), flag === '0' ? '0' : ' ');
+    return s;
+  });
+}
+
+/* ---------------- Source scanning ---------------- */
+// Splits a line into code and string pieces so rewrites never touch text inside quotes.
+function scanPieces(src, commentChar) {
+  const pieces = [];
+  let buf = '', i = 0;
+  while (i < src.length) {
+    const ch = src[i];
+    if (commentChar && ch === commentChar) break;
+    if (ch === '"' || ch === "'") {
+      let fstr = false;
+      if (/[fF]$/.test(buf) && !/[A-Za-z0-9_][fF]$/.test(buf)) { fstr = true; buf = buf.slice(0, -1); }
+      pieces.push({ t: 'code', v: buf }); buf = '';
+      let j = i + 1, s = ch;
+      while (j < src.length && src[j] !== ch) { if (src[j] === '\\') { s += src[j++]; } s += src[j++]; }
+      if (j >= src.length) throw new GameError('A string is missing its closing ' + ch + ' quote.');
+      s += ch;
+      pieces.push({ t: 'str', v: s, f: fstr });
+      i = j + 1;
+      continue;
+    }
+    buf += ch; i++;
+  }
+  pieces.push({ t: 'code', v: buf });
+  return pieces;
+}
+// Split on a separator at the top level (outside strings and brackets).
+function splitTop(str, sep) {
+  const parts = []; let depth = 0, buf = '', q = null;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (q) { buf += ch; if (ch === '\\') { buf += str[++i] || ''; } else if (ch === q) q = null; continue; }
+    if (ch === '"' || ch === "'") { q = ch; buf += ch; continue; }
+    if ('([{'.includes(ch)) depth++;
+    if (')]}'.includes(ch)) depth--;
+    if (depth === 0 && str.startsWith(sep, i)) { parts.push(buf); buf = ''; i += sep.length - 1; continue; }
+    buf += ch;
+  }
+  parts.push(buf);
+  return parts.map((p) => p.trim()).filter((p) => p.length);
+}
+
+/* ---------------- Python -> JavaScript ---------------- */
+function pyCode(c) {
+  return c
+    .replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null')
+    .replace(/\band\b/g, '&&').replace(/\bor\b/g, '||').replace(/\bnot\s+/g, '!')
+    .replace(/\/\//g, '/')
+    .replace(/\bprint\s*\(/g, '__print(')
+    .replace(/\b(len|str|int|float|range|abs|max|min|sum|round|input)\s*\(/g, '__$1(')
+    .replace(/\.append\s*\(/g, '.push(')
+    .replace(/\b(end|sep)\s*=(?!=)\s*/g, '__KW("$1"),');
+}
+function pyExpr(e) {
+  return scanPieces(e, '#').map((p) => {
+    if (p.t === 'code') return pyCode(p.v);
+    if (!p.f) return p.v;
+    const inner = p.v.slice(1, -1).replace(/`/g, '\\`').replace(/\{([^}]*)\}/g, (m, x) => '${__str(' + pyExpr(x) + ')}');
+    return '`' + inner + '`';
+  }).join('');
+}
+function pyStripComment(line) {
+  return scanPieces(line, '#').map((p) => p.v).join('');
+}
+function transpilePy(src) {
+  const lines = src.replace(/\t/g, '    ').split('\n');
+  const out = [];
+  const levels = [0];
+  let pending = null;
+  lines.forEach((raw, idx) => {
+    const ln = idx + 1;
+    let line;
+    try { line = pyStripComment(raw); } catch (e) { throw new GameError('SyntaxError on line ' + ln + ': ' + e.message); }
+    if (!line.trim()) { out.push(''); return; }
+    const ind = line.match(/^ */)[0].length;
+    const code = line.trim();
+    if (pending) {
+      if (ind <= pending.ind) throw new GameError('IndentationError on line ' + ln + ': expected an indented block after line ' + pending.ln + '. Indent the loop body with 4 spaces.');
+      levels.push(ind); pending = null;
+    } else if (ind > levels[levels.length - 1]) {
+      throw new GameError('IndentationError on line ' + ln + ': unexpected indent. Only the lines inside a loop or if get extra spaces.');
+    } else {
+      while (ind < levels[levels.length - 1]) { levels.pop(); out.push('}'); }
+      if (ind !== levels[levels.length - 1]) throw new GameError('IndentationError on line ' + ln + ': this line does not line up with the lines above it.');
+    }
+    let m, js, opener = true;
+    const kw = (code.match(/^(for|while|if|elif|else|def)\b/) || [])[1];
+    if (kw && !/:$/.test(code)) throw new GameError('SyntaxError on line ' + ln + ": expected ':' at the end of the " + kw + ' line.');
+    if ((m = code.match(/^for\s+([A-Za-z_]\w*)\s+in\s+range\s*\((.*)\)\s*:$/))) {
+      const a = splitTop(m[2], ',').map(pyExpr);
+      const [start, stop, step] = a.length === 1 ? ['0', a[0], '1'] : [a[0], a[1], a[2] || '1'];
+      const v = m[1];
+      js = 'for (let ' + v + ' = (' + start + '); (' + step + ') > 0 ? ' + v + ' < (' + stop + ') : ' + v + ' > (' + stop + '); ' + v + ' += (' + step + ')) {';
+    } else if ((m = code.match(/^for\s+([A-Za-z_]\w*)\s+in\s+(.+):$/))) {
+      js = 'for (let ' + m[1] + ' of __iter(' + pyExpr(m[2]) + ')) {';
+    } else if ((m = code.match(/^while\s+(.+):$/))) {
+      js = 'while (' + pyExpr(m[1]) + ') {';
+    } else if ((m = code.match(/^if\s+(.+):$/))) {
+      js = 'if (' + pyExpr(m[1]) + ') {';
+    } else if ((m = code.match(/^elif\s+(.+):$/))) {
+      js = 'else if (' + pyExpr(m[1]) + ') {';
+    } else if (/^else\s*:$/.test(code)) {
+      js = 'else {';
+    } else if ((m = code.match(/^def\s+([A-Za-z_]\w*)\s*\((.*)\)\s*:$/))) {
+      js = 'function ' + m[1] + '(' + m[2] + ') {';
+    } else {
+      opener = false;
+      if (code === 'pass') js = ';';
+      else if ((m = code.match(/^([A-Za-z_]\w*)\s*=(?!=)\s*(.+)$/))) js = 'var ' + m[1] + ' = ' + pyExpr(m[2]) + ';';
+      else js = pyExpr(code) + ';';
+    }
+    if (opener) pending = { ind, ln };
+    out.push(js);
+  });
+  if (pending) throw new GameError('IndentationError: expected an indented block after line ' + pending.ln + '.');
+  while (levels.length > 1) { levels.pop(); out.push('}'); }
+  return out.join('\n');
+}
+
+/* ---------------- C / C++ / Java -> JavaScript ---------------- */
+function lintSemicolons(src, langName) {
+  const lines = src.split('\n');
+  const clean = lines.map((l) => l.replace(/\/\/.*$/, '').trim());
+  let inBlock = false;
+  for (let i = 0; i < clean.length; i++) {
+    let l = clean[i];
+    if (inBlock) { if (l.includes('*/')) inBlock = false; continue; }
+    if (l.startsWith('/*')) { if (!l.includes('*/')) inBlock = true; continue; }
+    if (!l || l.startsWith('#') || l.startsWith('*')) continue;
+    if (/[;{},(]$/.test(l) || /(\+|-|\*|\/|<<|&&|\|\||=)$/.test(l)) continue;
+    if (/^(for|if|else|while|do|switch|public|private|class|int\s+main|void\s+main|using|case|default)\b/.test(l)) continue;
+    let next = '';
+    for (let j = i + 1; j < clean.length; j++) { if (clean[j]) { next = clean[j]; break; } }
+    if (next.startsWith('{') || next.startsWith('<<') || next.startsWith('.')) continue;
+    throw new GameError('error on line ' + (i + 1) + ": expected ';' at the end of the statement. In " + langName + ' every statement ends with a semicolon.');
+  }
+}
+function transpileCLike(src, lang) {
+  lintSemicolons(src, LANGS[lang].name);
+  const lines = src.split('\n').map((line) => {
+    if (/^\s*#\s*include\b/.test(line)) return '';
+    if (/^\s*using\s+namespace\s+\w+\s*;/.test(line)) return '';
+    if (/^\s*import\s+[\w.*]+\s*;/.test(line)) return '';
+    return line;
+  });
+  let s = lines.join('\n');
+  // Rewrite outside strings only
+  const pieces = [];
+  s.split('\n').forEach((line, li, arr) => {
+    // keep // comments out of rewrites
+    const p = scanPieces(line, null);
+    p.forEach((x) => pieces.push(x));
+    if (li < arr.length - 1) pieces.push({ t: 'code', v: '\n' });
+  });
+  let code = pieces.map((p) => (p.t === 'str' ? '\u0000' + encodeURIComponent(p.v) + '\u0001' : p.v)).join('');
+  code = code
+    .replace(/\b(?:public\s+|final\s+)*class\s+\w+\s*\{/g, '{')
+    .replace(/\b(?:public\s+|private\s+)?(?:static\s+)?(?:int|void)\s+main\s*\([^)]*\)\s*\{/g, 'function main() {')
+    .replace(/(?:std::)?cout\s*<<([^;]*);/g, (m, body) => '__cout(' + splitTop(body, '<<').join(', ') + ');')
+    .replace(/(?:std::)?endl\b/g, '__ENDL')
+    .replace(/System\.out\.println\s*\(/g, '__println(')
+    .replace(/System\.out\.printf\s*\(/g, '__printf(')
+    .replace(/System\.out\.print\s*\(/g, '__printj(')
+    .replace(/\bprintf\s*\(/g, '__printf(')
+    .replace(/\bputs\s*\(/g, '__puts(')
+    .replace(/\b(?:(?:const|final|static|unsigned|signed)\s+)*(?:long\s+long|long|int|short|float|double|char|bool|boolean|auto|String|std::string|string)\s+(?=[A-Za-z_]\w*\s*(?:=|;|,|:|\)|\[))/g, 'let ')
+    .replace(/\(\s*(?:int|float|double|long|char)\s*\)/g, '');
+  code = code.replace(/\u0000([^\u0001]*)\u0001/g, (m, x) => decodeURIComponent(x));
+  return code;
+}
+
+function transpile(lang, src) {
+  if (lang === 'js') return src;
+  if (lang === 'py') return transpilePy(src);
+  return transpileCLike(src, lang);
+}
+
+function friendlyError(e, lang) {
+  let msg = e && e.message ? e.message : String(e);
+  if (e instanceof GameError) return msg;
+  let m;
+  if ((m = msg.match(/^(\w+) is not defined/))) {
+    const name = m[1].replace(/^__/, '');
+    if (lang === 'py') return "NameError: name '" + name + "' is not defined. Check the spelling, or create the variable before you use it.";
+    if (lang === 'c' || lang === 'cpp') return "error: '" + name + "' was not declared in this scope. Check the spelling.";
+    if (lang === 'java') return 'error: cannot find symbol ' + name + '. Check the spelling.';
+    return 'ReferenceError: ' + name + ' is not defined. Check the spelling.';
+  }
+  if ((m = msg.match(/(\S+) is not a function/))) return "TypeError: " + m[1].replace(/__/g, '') + ' is not a function.';
+  if (e instanceof SyntaxError) {
+    if (lang === 'js') return 'SyntaxError: ' + msg + '. Check your brackets, quotes and commas.';
+    return 'Syntax error: the code could not be understood (' + msg + '). Check your brackets, quotes and commas.';
+  }
+  return (e && e.name ? e.name + ': ' : '') + msg;
+}
+
+/* ---------------- Running code ---------------- */
+function runScript(level, src) {
+  const lang = level.lang;
+  let out = '';
+  const platforms = [];
+  let guard = 0;
+  const ENDL = { endl: true };
+  const KW = function (name) { this.kw = name; };
+  function addPlatform(x, y, w) {
+    if (!level.platforms) throw new GameError(level.lockMsg || 'createPlatform is not available in this level.');
+    const nums = [x, y, w].map(Number);
+    if (arguments.length < 3 || nums.some((n) => !isFinite(n))) throw new GameError('createPlatform needs three numbers: x, y and width. Example: createPlatform(100, 300, 120)');
+    if (platforms.length >= 40) throw new GameError('Too many platforms (the limit is 40). Is your loop running too many times?');
+    platforms.push({ x: clamp(nums[0], -40, 800), y: clamp(nums[1], 30, 440), w: clamp(nums[2], 10, 300) });
+  }
+  const api = {
+    createPlatform: addPlatform,
+    create_platform: addPlatform,
+    __guard() { if (++guard > 200000) throw new GameError('Your code ran for too long. Check for a loop that never ends.'); },
+    __ENDL: ENDL,
+    __KW: (n) => new KW(n),
+    __print(...args) {
+      let end = '\n', sep = ' ';
+      const vals = [];
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] instanceof KW) { if (args[i].kw === 'end') end = String(args[i + 1]); else sep = String(args[i + 1]); i++; }
+        else vals.push(args[i]);
+      }
+      out += vals.map((v) => pyRepr(v, true)).join(sep) + end;
+    },
+    __str: (v) => pyRepr(v, true),
+    __len: (v) => (v && v.length !== undefined ? v.length : 0),
+    __int: (v) => Math.trunc(Number(v)),
+    __float: (v) => Number(v),
+    __abs: Math.abs,
+    __round: (v, d) => (d ? Number(Number(v).toFixed(d)) : Math.round(v)),
+    __max: (...a) => Math.max(...(a.length === 1 && Array.isArray(a[0]) ? a[0] : a)),
+    __min: (...a) => Math.min(...(a.length === 1 && Array.isArray(a[0]) ? a[0] : a)),
+    __sum: (a) => a.reduce((x, y) => x + y, 0),
+    __range(a, b, s) { if (b === undefined) { b = a; a = 0; } s = s || 1; const r = []; for (let i = a; s > 0 ? i < b : i > b; i += s) { r.push(i); if (r.length > 10000) break; } return r; },
+    __iter: (v) => (typeof v === 'string' ? v.split('') : v),
+    __input() { throw new GameError('input() is not available here. Store the value in a variable instead.'); },
+    __cout(...parts) { out += parts.map((p) => (p === ENDL ? '\n' : cRepr(p))).join(''); },
+    __printf(fmt, ...args) { out += cFormat(fmt, args); },
+    __puts(s) { out += String(s) + '\n'; },
+    __println(v) { out += (v === undefined ? '' : jsRepr(v, true)) + '\n'; },
+    __printj(v) { out += jsRepr(v, true); },
+  };
+  const fakeConsole = {
+    log: (...a) => { out += a.map((v) => jsRepr(v, true)).join(' ') + '\n'; },
+    info: (...a) => fakeConsole.log(...a), warn: (...a) => fakeConsole.log(...a), error: (...a) => fakeConsole.log(...a),
+  };
+  const varNames = level.vars ? (Array.isArray(level.vars) ? level.vars : Object.keys(level.vars)) : [];
+  let js;
+  try { js = transpile(lang, src); } catch (e) { return { output: out, error: friendlyError(e, lang), platforms }; }
+  js = js.replace(/\)\s*\{/g, '){__guard();').replace(/\bdo\s*\{/g, 'do{__guard();');
+  varNames.forEach((v) => { try { delete window[v]; } catch (e) { /* ignore */ } });
+  const body = js + '\n;if (typeof main === "function") main();\nreturn {' +
+    varNames.map((v) => JSON.stringify(v) + ': (typeof ' + v + ' !== "undefined" ? ' + v + ' : undefined)').join(',') + '};';
+  const names = Object.keys(api);
+  let fn;
+  try { fn = new Function(...names, 'console', body); } catch (e) { return { output: out, error: friendlyError(e, lang), platforms }; }
+  let vars = {};
+  try { vars = fn(...names.map((n) => api[n]), fakeConsole) || {}; } catch (e) { return { output: out, error: friendlyError(e, lang), platforms }; }
+  varNames.forEach((v) => { try { delete window[v]; } catch (e) { /* ignore */ } });
+  return { output: out, platforms, vars };
+}
+
+function parseStyleAttr(s) {
+  const o = {};
+  String(s || '').split(';').forEach((d) => { const i = d.indexOf(':'); if (i > 0) o[d.slice(0, i).trim().toLowerCase()] = d.slice(i + 1).trim(); });
+  return o;
+}
+const px = (v) => { const m = String(v || '').match(/^(-?\d+(?:\.\d+)?)(px)?$/); return m ? Number(m[1]) : NaN; };
+
+function runHTML(level, src) {
+  const notes = [];
+  const opens = (src.match(/<div\b/gi) || []).length, closes = (src.match(/<\/div>/gi) || []).length;
+  if (opens !== closes) notes.push(['warn', 'Warning: you have ' + opens + ' <div> tag(s) but ' + closes + ' </div> tag(s). Every opening tag needs a closing tag.']);
+  const doc = new DOMParser().parseFromString(src, 'text/html');
+  doc.querySelectorAll('script,iframe,object,embed,link,meta,base,form,frame,frameset').forEach((e) => e.remove());
+  doc.querySelectorAll('*').forEach((el) => {
+    [...el.attributes].forEach((a) => {
+      if (/^on/i.test(a.name) || (/^(href|src|action|formaction|xlink:href)$/i.test(a.name))) el.removeAttribute(a.name);
+    });
+  });
+  const platforms = [];
+  doc.querySelectorAll('.platform').forEach((el, i) => {
+    const st = parseStyleAttr(el.getAttribute('style'));
+    const x = px(st.left), y = px(st.top), w = px(st.width);
+    if ([x, y, w].some((n) => !isFinite(n))) {
+      notes.push(['err', 'Platform ' + (i + 1) + ' needs left, top and width in px, like style="left: 100px; top: 300px; width: 120px".']);
+      return;
+    }
+    platforms.push({ x: clamp(x, -40, 800), y: clamp(y, 30, 440), w: clamp(w, 10, 300) });
+  });
+  if (level.type === 'platformer') {
+    platforms.forEach((p, i) => notes.push(['info', 'Platform ' + (i + 1) + ': x ' + p.x + ', y ' + p.y + ', width ' + p.w]));
+    if (!platforms.length && /platform/.test(src)) notes.push(['warn', 'No platforms found. Check that each div has class="platform".']);
+  }
+  return { doc, platforms, notes, output: '' };
+}
+
+function parseCSS(src) {
+  const clean = src.replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(clean))) {
+    const selectors = m[1].split(',').map((s) => s.trim()).filter(Boolean);
+    const decls = {};
+    m[2].split(';').forEach((d) => {
+      if (!d.trim()) return;
+      const i = d.indexOf(':');
+      if (i < 0) throw new GameError('CSS error: "' + d.trim() + '" is missing a colon. Write it as property: value;');
+      decls[d.slice(0, i).trim().toLowerCase()] = d.slice(i + 1).trim().replace(/\s*!important$/, '');
+    });
+    rules.push({ selectors, decls });
+  }
+  const leftover = clean.replace(re, '').trim();
+  if (leftover) throw new GameError('CSS error near "' + leftover.slice(0, 30) + '". Check that every rule has a selector, a { and a }.');
+  return rules;
+}
+
+function runCSS(level, src) {
+  const notes = [];
+  let rules;
+  try { rules = parseCSS(src); } catch (e) { return { error: e.message, notes, platforms: [] }; }
+  const overrides = {};
+  const known = new Set(['display', 'visibility', 'width', 'height', 'left', 'top', 'background', 'background-color', 'opacity']);
+  const targets = (level.world.blocks || []);
+  rules.forEach((r) => {
+    r.selectors.forEach((sel) => {
+      const hits = targets.filter((b) => (b.id && sel === '#' + b.id) || (b.cls && sel === '.' + b.cls));
+      if (!hits.length) { notes.push(['warn', 'Selector ' + sel + ' did not match anything in this level. Try #door or .bridge.']); return; }
+      hits.forEach((b) => {
+        const key = b.id || b.cls;
+        overrides[key] = Object.assign(overrides[key] || {}, r.decls);
+      });
+      Object.keys(r.decls).forEach((p) => { if (!known.has(p)) notes.push(['info', 'Note: the game ignores the property "' + p + '".']); });
+    });
+  });
+  return { overrides, notes, platforms: [], output: '' };
+}
+
+function runCode(level, src) {
+  if (level.lang === 'html') return runHTML(level, src);
+  if (level.lang === 'css') return runCSS(level, src);
+  return runScript(level, src);
+}
+
+/* ---------------- Platformer engine ---------------- */
+const W = 800, H = 450;
+const canvas = $('game');
+const ctx = canvas.getContext('2d');
+const game = {
+  level: null, solids: [], spikes: [], flag: null,
+  phys: { g: 0.6, jump: 11, speed: 4 },
+  p: null, keys: { left: false, right: false }, jumpBuf: 0, coyote: 0,
+  won: false, deaths: 0, hover: null, t: 0, flash: 0, running: false, codeOk: false,
+};
+
+function setupCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function buildWorld(level, result) {
+  const w = level.world;
+  const solids = [];
+  w.ground.forEach(([a, b]) => solids.push({ x: a, y: 400, w: b - a, h: 50, kind: 'ground' }));
+  (w.blocks || []).forEach((b) => {
+    const s = Object.assign({ kind: 'block' }, b);
+    const ov = result && result.overrides && result.overrides[b.id || b.cls];
+    if (ov) {
+      if (ov.display === 'none' || ov.visibility === 'hidden') s.hidden = true;
+      ['width', 'height', 'left', 'top'].forEach((k) => {
+        if (ov[k] !== undefined) {
+          const n = px(ov[k]);
+          if (isFinite(n)) { const key = { width: 'w', height: 'h', left: 'x', top: 'y' }[k]; s[key] = k === 'width' || k === 'height' ? clamp(n, 0, 400) : clamp(n, 0, 800); }
+        }
+      });
+      const color = ov['background-color'] || ov.background;
+      if (color && window.CSS && CSS.supports('color', color)) s.color = color;
+      if (ov.opacity !== undefined && isFinite(Number(ov.opacity))) s.alpha = clamp(Number(ov.opacity), 0, 1);
+    }
+    solids.push(s);
+  });
+  ((result && result.platforms) || []).forEach((p) => solids.push({ x: p.x, y: p.y, w: p.w, h: 16, kind: 'code', color: LANGS[level.lang].color }));
+  game.solids = solids;
+  game.spikes = w.spikes || [];
+  game.flag = { x: w.flag[0], y: w.flag[1] };
+}
+
+function setPhysics(level, vars) {
+  game.phys = { g: 0.6, jump: 11, speed: 4 };
+  if (level.vars && !Array.isArray(level.vars)) {
+    Object.entries(level.vars).forEach(([name, spec]) => {
+      let v = vars && typeof vars[name] === 'number' && isFinite(vars[name]) ? vars[name] : spec.def;
+      v = clamp(v, spec.min, spec.max);
+      game.phys[spec.phys] = v;
+    });
+  }
+}
+
+function respawn() {
+  const s = (game.level.world.start) || [40, 370];
+  game.p = { x: s[0], y: s[1], w: 22, h: 30, vx: 0, vy: 0, onGround: false, face: 1 };
+  game.jumpBuf = 0; game.coyote = 0;
+}
+
+function overlaps(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+function step() {
+  const p = game.p, ph = game.phys;
+  if (!p || game.won) return;
+  const dir = (game.keys.right ? 1 : 0) - (game.keys.left ? 1 : 0);
+  p.vx = dir * ph.speed;
+  if (dir) p.face = dir;
+  game.coyote = p.onGround ? 6 : game.coyote - 1;
+  if (game.jumpBuf > 0) game.jumpBuf--;
+  if (game.jumpBuf > 0 && game.coyote > 0) { p.vy = -ph.jump; game.jumpBuf = 0; game.coyote = 0; p.onGround = false; }
+  p.vy = Math.min(p.vy + ph.g, 14);
+  const solids = game.solids.filter((s) => !s.hidden);
+  p.x += p.vx;
+  for (const s of solids) if (overlaps(p, s)) { if (p.vx > 0) p.x = s.x - p.w; else if (p.vx < 0) p.x = s.x + s.w; }
+  p.x = clamp(p.x, 0, W - p.w);
+  p.y += p.vy;
+  p.onGround = false;
+  for (const s of solids) if (overlaps(p, s)) {
+    if (p.vy > 0) { p.y = s.y - p.h; p.vy = 0; p.onGround = true; }
+    else if (p.vy < 0) { p.y = s.y + s.h; p.vy = 0; }
+  }
+  for (const [sx, sw] of game.spikes) {
+    if (overlaps({ x: p.x + 3, y: p.y, w: p.w - 6, h: p.h }, { x: sx, y: 432, w: sw, h: 18 })) return die();
+  }
+  if (p.y > H + 40) return die();
+  const f = game.flag;
+  if (overlaps(p, { x: f.x - 4, y: -200, w: 30, h: f.y + 200 })) reachFlag();
+}
+
+function die() { game.deaths++; game.flash = 18; respawn(); }
+
+function drawGrid() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#191d44'); g.addColorStop(1, '#0d1024');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(158,161,204,0.08)'; ctx.lineWidth = 1;
+  for (let x = 0; x <= W; x += 50) { ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(158,161,204,0.45)'; ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.textBaseline = 'top';
+  for (let x = 100; x < W; x += 100) ctx.fillText(String(x), x + 3, 3);
+  for (let y = 100; y < H; y += 100) ctx.fillText(String(y), 3, y + 3);
+}
+
+function drawSolid(s) {
+  if (s.hidden) {
+    ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(158,161,204,0.35)';
+    ctx.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1); ctx.restore();
+    return;
+  }
+  ctx.save();
+  if (s.alpha !== undefined) ctx.globalAlpha = Math.max(0.12, s.alpha);
+  if (s.kind === 'ground' || s.kind === 'block') {
+    ctx.fillStyle = s.color || '#2c3268'; ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    for (let yy = s.y + 12; yy < s.y + s.h; yy += 14) for (let xx = s.x + ((yy / 14) % 2 ? 0 : 14); xx < s.x + s.w; xx += 28) ctx.fillRect(xx, yy, 24, 2);
+    ctx.fillStyle = '#5a62b0'; ctx.fillRect(s.x, s.y, s.w, 4);
+  } else if (s.kind === 'door') {
+    ctx.fillStyle = s.color || '#a8652d'; ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.strokeStyle = '#5b3414'; ctx.lineWidth = 2;
+    for (let yy = s.y + 20; yy < s.y + s.h; yy += 30) { ctx.beginPath(); ctx.moveTo(s.x, yy); ctx.lineTo(s.x + s.w, yy); ctx.stroke(); }
+    ctx.fillStyle = '#ffb547'; ctx.beginPath(); ctx.arc(s.x + s.w / 2, s.y + s.h / 2, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillRect(s.x + s.w / 2 - 2, s.y + s.h / 2, 4, 10);
+    label(s, '#door');
+  } else if (s.kind === 'bridge') {
+    ctx.fillStyle = s.color || '#c58a4a'; ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    for (let xx = s.x + 18; xx < s.x + s.w; xx += 20) ctx.fillRect(xx, s.y, 2, s.h);
+    label(s, '.bridge');
+  } else if (s.kind === 'code') {
+    ctx.fillStyle = s.color; ctx.globalAlpha *= 0.25; ctx.fillRect(s.x, s.y, s.w, s.h);
+    ctx.globalAlpha = s.alpha !== undefined ? Math.max(0.12, s.alpha) : 1;
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.strokeRect(s.x + 1, s.y + 1, s.w - 2, s.h - 2);
+    ctx.fillStyle = s.color; ctx.font = 'bold 10px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+    if (s.w > 34) ctx.fillText('</>', s.x + 5, s.y + 8.5);
+  }
+  ctx.restore();
+}
+function label(s, text) {
+  ctx.fillStyle = 'rgba(236,234,248,0.85)'; ctx.font = '11px "JetBrains Mono", monospace'; ctx.textBaseline = 'bottom';
+  ctx.fillText(text, s.x, s.y - 4);
+}
+
+function drawSpikes() {
+  ctx.fillStyle = '#ff6b7a';
+  for (const [sx, sw] of game.spikes) {
+    for (let x = sx; x < sx + sw; x += 16) {
+      ctx.beginPath(); ctx.moveTo(x, 450); ctx.lineTo(x + 8, 432); ctx.lineTo(Math.min(x + 16, sx + sw), 450); ctx.fill();
+    }
+  }
+}
+
+function drawFlag() {
+  const f = game.flag;
+  ctx.fillStyle = '#eceaf8'; ctx.fillRect(f.x, f.y - 64, 3, 64);
+  const wave = Math.sin(game.t / 9) * 3;
+  ctx.fillStyle = '#ffb547';
+  ctx.beginPath(); ctx.moveTo(f.x + 3, f.y - 64); ctx.quadraticCurveTo(f.x + 16, f.y - 60 + wave, f.x + 30, f.y - 56); ctx.lineTo(f.x + 3, f.y - 44); ctx.fill();
+}
+
+function drawPlayer() {
+  const p = game.p; if (!p) return;
+  const bob = p.onGround && p.vx ? Math.sin(game.t / 3) * 1.2 : 0;
+  ctx.save(); ctx.translate(p.x, p.y + bob);
+  ctx.fillStyle = '#eceaf8'; ctx.fillRect(2, 4, 18, 20);
+  ctx.fillStyle = '#11132a'; ctx.fillRect(p.face > 0 ? 7 : 3, 9, 12, 7);
+  ctx.fillStyle = '#57d6c2'; ctx.fillRect(p.face > 0 ? 13 : 5, 11, 4, 3);
+  ctx.fillStyle = '#ffb547'; ctx.fillRect(9, 0, 4, 4);
+  ctx.fillStyle = '#9ea1cc'; ctx.fillRect(4, 24, 5, 6); ctx.fillRect(13, 24, 5, 6);
+  ctx.restore();
+}
+
+function drawHud() {
+  const ph = game.phys;
+  ctx.fillStyle = 'rgba(11,13,30,0.7)'; ctx.fillRect(W - 250, 6, 244, 22);
+  ctx.fillStyle = '#9ea1cc'; ctx.font = '11px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
+  ctx.fillText('gravity ' + ph.g.toFixed(2) + '  jump ' + ph.jump.toFixed(1) + '  falls ' + game.deaths, W - 242, 17);
+  if (game.hover) {
+    const { x, y } = game.hover;
+    ctx.strokeStyle = 'rgba(87,214,194,0.5)'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if (game.flash > 0) { ctx.fillStyle = 'rgba(255,107,122,' + (game.flash / 40) + ')'; ctx.fillRect(0, 0, W, H); game.flash--; }
+}
+
+function draw() {
+  drawGrid();
+  drawSpikes();
+  game.solids.forEach(drawSolid);
+  drawFlag();
+  drawPlayer();
+  drawHud();
+}
+
+let last = 0, acc = 0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (!game.running) { last = ts; return; }
+  const dt = Math.min(100, ts - (last || ts)); last = ts; acc += dt;
+  while (acc >= 1000 / 60) { step(); game.t++; acc -= 1000 / 60; }
+  draw();
+}
+
+function canvasPoint(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: Math.round(((e.clientX - r.left) / r.width) * W), y: Math.round(((e.clientY - r.top) / r.height) * H) };
+}
+canvas.addEventListener('mousemove', (e) => { game.hover = canvasPoint(e); $('coords').textContent = 'x ' + game.hover.x + ', y ' + game.hover.y; });
+canvas.addEventListener('mouseleave', () => { game.hover = null; $('coords').textContent = 'hover to read x, y'; });
+
+function isTyping(e) { const t = e.target; return t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT'); }
+window.addEventListener('keydown', (e) => {
+  if (!game.running || isTyping(e)) return;
+  const k = e.key;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') { game.keys.left = true; e.preventDefault(); }
+  else if (k === 'ArrowRight' || k === 'd' || k === 'D') { game.keys.right = true; e.preventDefault(); }
+  else if (k === 'ArrowUp' || k === ' ' || k === 'w' || k === 'W') { if (!e.repeat) game.jumpBuf = 8; e.preventDefault(); }
+  else if (k === 'r' || k === 'R') respawn();
+});
+window.addEventListener('keyup', (e) => {
+  const k = e.key;
+  if (k === 'ArrowLeft' || k === 'a' || k === 'A') game.keys.left = false;
+  if (k === 'ArrowRight' || k === 'd' || k === 'D') game.keys.right = false;
+});
+window.addEventListener('blur', () => { game.keys.left = game.keys.right = false; });
+function holdButton(id, on, off) {
+  const b = $(id);
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); on(); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, off));
+}
+holdButton('tLeft', () => (game.keys.left = true), () => (game.keys.left = false));
+holdButton('tRight', () => (game.keys.right = true), () => (game.keys.right = false));
+holdButton('tJump', () => (game.jumpBuf = 8), () => {});
+
+/* ---------------- UI ---------------- */
+let done = new Set(store('ucsig-done') || []);
+let drafts = store('ucsig-drafts') || {};
+let current = 0;
+let hintShown = false;
+
+function saveProgress() { store('ucsig-done', [...done]); }
+function saveDraft() { drafts[LEVELS[current].id] = codeEl.value; store('ucsig-drafts', drafts); }
+
+function updateProgress() {
+  $('progText').textContent = done.size + ' / ' + LEVELS.length + ' levels';
+  $('progBar').style.width = (done.size / LEVELS.length) * 100 + '%';
+  const nextIdx = LEVELS.findIndex((l) => !done.has(l.id));
+  $('continueBtn').textContent = done.size === 0 ? 'Start level 1' : nextIdx < 0 ? 'Replay level 1' : 'Continue: level ' + (nextIdx + 1);
+}
+
+function renderMap() {
+  const groups = [];
+  LEVELS.forEach((l, i) => {
+    let g = groups.find((x) => x.lang === l.lang);
+    if (!g) { g = { lang: l.lang, items: [] }; groups.push(g); }
+    g.items.push({ l, i });
+  });
+  $('levelList').innerHTML = groups.map((g) => {
+    const L = LANGS[g.lang];
+    return '<section class="lang-section"><div class="lang-head"><span class="dot" style="background:' + L.color + '"></span><h2>' + esc(L.name) + '</h2><small>' + esc(L.blurb) + '</small></div><div class="cards">' +
+      g.items.map(({ l, i }) => '<button class="card" style="--lc:' + L.color + '" data-i="' + i + '"><span class="num">LEVEL ' + String(i + 1).padStart(2, '0') + '</span><span class="t">' + esc(l.title) + '</span><span class="b">' + esc(l.badge) + '</span>' + (done.has(l.id) ? '<span class="done">CLEAR</span>' : '') + '</button>').join('') +
+      '</div></section>';
+  }).join('');
+  $('levelList').querySelectorAll('.card').forEach((c) => c.addEventListener('click', () => openLevel(Number(c.dataset.i))));
+  updateProgress();
+}
+
+function showMap() {
+  game.running = false;
+  $('playScreen').hidden = true; $('mapScreen').hidden = false;
+  renderMap();
+  window.scrollTo(0, 0);
+}
+
+const codeEl = $('code');
+function updateGutter() {
+  const n = codeEl.value.split('\n').length;
+  let s = ''; for (let i = 1; i <= n; i++) s += i + '\n';
+  $('gutter').textContent = s;
+  $('gutter').scrollTop = codeEl.scrollTop;
+}
+codeEl.addEventListener('input', () => { updateGutter(); saveDraft(); });
+codeEl.addEventListener('scroll', () => { $('gutter').scrollTop = codeEl.scrollTop; });
+codeEl.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); runCurrent(); return; }
+  if (e.key === 'Tab' && !e.shiftKey) {
+    e.preventDefault();
+    insertText('    ');
+  } else if (e.key === 'Enter') {
+    const v = codeEl.value, pos = codeEl.selectionStart;
+    const lineStart = v.lastIndexOf('\n', pos - 1) + 1;
+    const line = v.slice(lineStart, pos);
+    let indent = line.match(/^\s*/)[0];
+    if (/[:{]\s*$/.test(line)) indent += '    ';
+    e.preventDefault();
+    insertText('\n' + indent);
+  }
+});
+function insertText(t) {
+  const s = codeEl.selectionStart, en = codeEl.selectionEnd;
+  codeEl.setRangeText(t, s, en, 'end');
+  codeEl.dispatchEvent(new Event('input'));
+}
+
+const consoleEl = $('consoleOut');
+function log(text, cls) {
+  const span = document.createElement('span');
+  span.className = cls || 'out';
+  span.textContent = text.endsWith('\n') ? text : text + '\n';
+  consoleEl.appendChild(span);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+function clearConsole() { consoleEl.textContent = ''; }
+
+function openLevel(i) {
+  current = clamp(i, 0, LEVELS.length - 1);
+  const lv = LEVELS[current], L = LANGS[lv.lang];
+  hintShown = false;
+  $('mapScreen').hidden = true; $('playScreen').hidden = false;
+  $('win').hidden = true;
+  ['lvLang', 'edLang'].forEach((id) => { $(id).textContent = L.short; $(id).style.background = L.color; });
+  $('lvBadge').textContent = lv.badge;
+  $('lvTitle').textContent = (current + 1) + '. ' + lv.title;
+  $('fname').textContent = L.file;
+  $('prevBtn').disabled = current === 0;
+  $('nextBtn').disabled = current === LEVELS.length - 1;
+  $('lesson').innerHTML = '<h3>LEARN ' + esc(L.name.toUpperCase()) + '</h3>' + lv.learn + '<p class="task">' + lv.task + '</p>';
+  codeEl.value = drafts[lv.id] !== undefined ? drafts[lv.id] : lv.starter;
+  updateGutter();
+  clearConsole();
+
+  const isPlat = lv.type === 'platformer';
+  $('gameWrap').hidden = !isPlat;
+  $('questionWrap').hidden = lv.type !== 'console';
+  $('previewWrap').hidden = lv.type !== 'web';
+  $('coords').textContent = isPlat ? 'hover to read x, y' : '';
+  $('stageLabel').textContent = isPlat ? 'Game: arrows or A / D to move, Space to jump, R to restart' : lv.type === 'web' ? 'Browser preview' : 'Quest console';
+
+  if (lv.type === 'console') {
+    $('qtext').textContent = lv.question;
+    $('qexpect').innerHTML = 'Expected output:<br><b>' + esc(lv.expect) + '</b>';
+    log('Write your ' + L.name + ' code, then press Run.', 'info');
+  }
+  if (lv.type === 'web') {
+    renderPreview(null);
+    log('Write HTML on the left and press Run to see it in the browser.', 'info');
+  }
+  if (isPlat) {
+    game.level = lv; game.won = false; game.deaths = 0; game.codeOk = !lv.require;
+    setPhysics(lv, null);
+    buildWorld(lv, null);
+    respawn();
+    game.running = true;
+    log('Write ' + L.name + ' code and press Run to change the level. Then play with the arrow keys.', 'info');
+  } else {
+    game.running = false;
+  }
+  window.scrollTo(0, 0);
+}
+
+function renderPreview(doc) {
+  const host = $('previewHost');
+  const root = host.shadowRoot || host.attachShadow({ mode: 'open' });
+  const base = '<style>:host{all:initial;display:block;color:#111;background:#fff;font-family:Georgia,serif;font-size:16px;line-height:1.4}.pv{padding:16px;min-height:220px}</style>';
+  if (!doc) { root.innerHTML = base + '<div class="pv" style="color:#888;font-family:sans-serif">Your page will appear here.</div>'; return; }
+  const styles = [...doc.querySelectorAll('style')].map((s) => s.textContent.replace(/\bbody\b/g, '.pv').replace(/\bhtml\b/g, ':host')).join('\n');
+  doc.querySelectorAll('style').forEach((s) => s.remove());
+  root.innerHTML = base + '<style>' + styles + '</style><div class="pv">' + doc.body.innerHTML + '</div>';
+}
+
+function runCurrent() {
+  const lv = LEVELS[current];
+  const src = codeEl.value;
+  clearConsole();
+  $('win').hidden = true;
+  log('> Running ' + LANGS[lv.lang].file, 'info');
+  const r = runCode(lv, src);
+  (r.notes || []).forEach(([cls, t]) => log(t, cls));
+  if (r.output) log(r.output, 'out');
+  if (r.error) { log(r.error, 'err'); return; }
+
+  if (lv.type === 'console') {
+    if (!norm(r.output)) log('(nothing was printed)', 'info');
+    const ctxObj = { run: (s) => runCode(lv, s), log };
+    const problem = lv.check(r, src, ctxObj);
+    if (problem) { log(problem, 'warn'); return; }
+    complete('Correct! The console printed exactly what the quest asked for.');
+    return;
+  }
+  if (lv.type === 'web') {
+    renderPreview(r.doc);
+    const problem = lv.check(r, src);
+    if (problem) { log(problem, 'warn'); return; }
+    complete('Your title screen is live. Try clicking around in the preview.');
+    return;
+  }
+  // platformer
+  const problem = lv.require ? lv.require(r, src) : null;
+  if (problem) {
+    log(problem, 'warn');
+    game.codeOk = false;
+    setPhysics(lv, null); buildWorld(lv, null);
+  } else {
+    game.codeOk = true;
+    setPhysics(lv, r.vars);
+    buildWorld(lv, r);
+    if (r.platforms.length && lv.lang !== 'html') log('Built ' + r.platforms.length + ' platform' + (r.platforms.length > 1 ? 's' : '') + '.', 'ok');
+    if (lv.vars && !Array.isArray(lv.vars)) {
+      Object.entries(lv.vars).forEach(([name, spec]) => {
+        const raw = r.vars[name];
+        const used = game.phys[spec.phys];
+        log(name + ' = ' + used + (raw !== used ? ' (the game keeps it between ' + spec.min + ' and ' + spec.max + ')' : ''), 'ok');
+      });
+    }
+    if (lv.lang === 'css') {
+      const door = game.solids.find((s) => s.id === 'door');
+      if (door && !door.hidden && door.alpha === 0) log('The door is invisible, but still solid! opacity only changes how it looks. Try display: none;', 'warn');
+    }
+    log('Code applied. Now reach the flag!', 'ok');
+  }
+  game.won = false;
+  respawn();
+  canvas.focus({ preventScroll: true });
+}
+
+function reachFlag() {
+  const lv = LEVELS[current];
+  if (!game.codeOk) {
+    game.won = false;
+    respawn();
+    log('You reached the flag, but your code does not meet the level goal yet. Fix it and run again.', 'warn');
+    return;
+  }
+  game.won = true;
+  game.keys.left = game.keys.right = false;
+  complete(game.deaths === 0 ? 'Flawless: no falls. Your code built the way through.' : 'Made it after ' + game.deaths + ' fall' + (game.deaths > 1 ? 's' : '') + '. Your code built the way through.');
+}
+
+function complete(msg) {
+  const lv = LEVELS[current];
+  done.add(lv.id); saveProgress(); updateProgress();
+  log('LEVEL CLEAR: ' + lv.title, 'ok');
+  $('winMsg').textContent = msg;
+  $('winNext').textContent = current === LEVELS.length - 1 ? 'Back to all levels' : 'Next level →';
+  if (done.size === LEVELS.length && current === LEVELS.length - 1) $('winMsg').textContent = msg + ' You finished every level in all seven languages!';
+  $('win').hidden = false;
+  $('winNext').focus({ preventScroll: true });
+}
+
+$('runBtn').addEventListener('click', runCurrent);
+$('hintBtn').addEventListener('click', () => { hintShown = true; log('Hint: ' + LEVELS[current].hint, 'warn'); });
+$('solBtn').addEventListener('click', () => {
+  const b = $('solBtn');
+  if (!hintShown && b.dataset.confirm !== '1') {
+    b.dataset.confirm = '1'; b.textContent = 'Sure? Click again';
+    setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Show solution'; }, 2500);
+    return;
+  }
+  b.dataset.confirm = ''; b.textContent = 'Show solution';
+  codeEl.value = LEVELS[current].solution; updateGutter(); saveDraft();
+  log('Solution loaded into the editor. Read it line by line, then press Run.', 'info');
+});
+$('resetCode').addEventListener('click', () => { codeEl.value = LEVELS[current].starter; updateGutter(); saveDraft(); log('Code reset to the starting version.', 'info'); });
+$('clearBtn').addEventListener('click', clearConsole);
+$('prevBtn').addEventListener('click', () => openLevel(current - 1));
+$('nextBtn').addEventListener('click', () => openLevel(current + 1));
+$('mapBtn').addEventListener('click', showMap);
+$('homeBtn').addEventListener('click', showMap);
+$('winStay').addEventListener('click', () => { $('win').hidden = true; });
+$('winNext').addEventListener('click', () => { if (current === LEVELS.length - 1) showMap(); else openLevel(current + 1); });
+$('continueBtn').addEventListener('click', () => { const n = LEVELS.findIndex((l) => !done.has(l.id)); openLevel(n < 0 ? 0 : n); });
+
+// Keep the open level across live updates of the page.
+window.claude?.hot?.snapshot?.(() => ({ level: $('playScreen').hidden ? null : current }));
+function start(data) {
+  setupCanvas();
+  renderMap();
+  requestAnimationFrame(loop);
+  if (data && typeof data.level === 'number') openLevel(data.level);
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+window.__ucsig = { LEVELS, runCode, game, openLevel, runCurrent, step };
+})();
+</script>
+</body>
+</html>
