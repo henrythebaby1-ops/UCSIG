@@ -258,14 +258,14 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
 <div class="wrap">
   <header class="topbar">
     <button class="brand" id="homeBtn" aria-label="Back to level map"><span class="chip">&lt;/&gt;</span>USING CODING SKILLS IN GAMES</button>
-    <div class="progress"><span id="progText">0 / 25 levels</span><div class="bar"><i id="progBar"></i></div></div>
+    <div class="progress"><span id="progText">0 / 37 levels</span><div class="bar"><i id="progBar"></i></div></div>
   </header>
 
   <section id="mapScreen">
     <div class="hero">
       <div>
         <h1>Using Coding Skills <span>In Games</span></h1>
-        <p>Every level is solved by writing real code in a real code editor. Print answers to the console, build platforms with function calls, bend gravity with a variable, fix buggy loops and style the level with CSS, across seven languages.</p>
+        <p>Every level is solved by writing real code in a real code editor. Print answers to the console, build platforms with function calls, bend gravity with a variable, fix buggy loops and style the level with CSS, across eight languages.</p>
         <div class="mechanics">
           <span class="mech">Console quests</span><span class="mech">Build platforms</span><span class="mech">Change physics</span><span class="mech">Write functions</span><span class="mech">Fix the bug</span><span class="mech">Make a web page</span><span class="mech">Style the level</span>
         </div>
@@ -391,6 +391,7 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
 /* ---------------- Languages ---------------- */
 const LANGS = {
   js:   { name: 'JavaScript', short: 'JS',   color: '#f7df1e', file: 'main.js',    blurb: 'The language of the web and browser games.' },
+  ts:   { name: 'TypeScript', short: 'TS',   color: '#4dd0e1', file: 'main.ts',    blurb: 'JavaScript with types. Catches bugs before the code runs.' },
   py:   { name: 'Python',     short: 'PY',   color: '#6aaef0', file: 'main.py',    blurb: 'Readable, uses indentation instead of braces.' },
   html: { name: 'HTML',       short: 'HTML', color: '#f37148', file: 'index.html', blurb: 'Describes the structure of web pages with tags.' },
   css:  { name: 'CSS',        short: 'CSS',  color: '#8b9dff', file: 'style.css',  blurb: 'Styles HTML: size, position, color, visibility.' },
@@ -550,6 +551,159 @@ let jumpPower = 10;
     },
   },
 
+  {
+    id: 'js-array', lang: 'js', type: 'platformer', badge: 'Build with arrays', title: 'Cloud Hop',
+    learn: String.raw`<p>An array holds a list of values. <code>list[0]</code> is the first one and <code>list.length</code> counts them.</p><pre><code>let speeds = [2, 4, 6];
+console.log(speeds[1]);      // 4
+console.log(speeds.length);  // 3</code></pre>`,
+    guide: [
+      { say: String.raw`An <em>array</em> is a list of values in square brackets: <code>let hp = [100, 80, 55];</code>` },
+      { say: String.raw`Each value has a position number called an <em>index</em>, and counting starts at <b>0</b>. So <code>hp[0]</code> is 100 and <code>hp[2]</code> is 55. <code>hp.length</code> tells you how many there are.` },
+      { say: String.raw`Try it: print the <b>last</b> value in <code>colors</code> using its index.`,
+        try: { lang: 'js', starter: 'let colors = ["red", "green", "blue"];\n', check(src, h) {
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (!/colors\s*\[/.test(src)) return 'Use square brackets after colors to pick a value.';
+          if (norm(r.output) !== 'blue') return 'You printed "' + norm(r.output) + '". The last one is at index 2, because counting starts at 0.';
+        } } },
+      { say: String.raw`Index wizard! The array in the editor already holds a height for each cloud. Loop through it and build one cloud for each height, moving right each time.` },
+    ],
+    task: 'Build one cloud platform for each value in <strong>heights</strong>, 120 pixels apart, starting at x = 150. Reach the ledge.',
+    world: { ground: [[0, 120]], blocks: [{ x: 640, y: 200, w: 160, h: 250 }], spikes: [[120, 520]], flag: [760, 200] },
+    platforms: true,
+    starter: String.raw`let heights = [360, 320, 280, 240];
+
+for (let i = 0; i < heights.length; i++) {
+  // build a cloud here (80 wide)
+}
+`,
+    hint: 'The x changes with i (150, 270, 390...). The y is the height at position i in the array.',
+    solution: String.raw`let heights = [360, 320, 280, 240];
+
+for (let i = 0; i < heights.length; i++) {
+  createPlatform(150 + i * 120, heights[i], 80);
+}`,
+    require(r, src) {
+      if (!/heights\s*\[/.test(src)) return 'Read the heights out of the array with heights[i].';
+      if (r.platforms.length < 4) return 'You built ' + r.platforms.length + ' cloud(s). Build one for each height.';
+    },
+  },
+  {
+    id: 'js-while', lang: 'js', type: 'console', badge: 'Console quest', title: 'Power Surge',
+    learn: String.raw`<code>while</code> repeats while its condition is true. <code>*=</code> multiplies a variable.</p><pre><code>let n = 1;
+while (n &lt; 50) {
+  n *= 3;
+}</code></pre>`,
+    guide: [
+      { say: String.raw`A <code>while</code> loop keeps going as long as its condition is true. It's perfect when you don't know in advance how many times to repeat.` },
+      { say: String.raw`Shortcuts: <code>x += 5</code> adds 5 to x, and <code>x *= 2</code> doubles it. Something in the loop must change, or it runs forever!` },
+      { say: String.raw`Try it: start <code>n</code> at 1 and keep adding 10 <b>while n is less than 40</b>, printing n each time. You should see 1, 11, 21, 31.`,
+        try: { lang: 'js', starter: 'let n = 1;\n', check(src, h) {
+          if (!/\bwhile\s*\(/.test(src)) return 'Use a while loop.';
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (norm(r.output) !== '1\n11\n21\n31') return 'Expected 1, 11, 21, 31. You printed: ' + (norm(r.output).replace(/\n/g, ', ') || 'nothing');
+        } } },
+      { say: String.raw`Now charge up the power core. Double it each time until it passes 100.` },
+    ],
+    task: 'Print <strong>power</strong> and double it, <strong>while</strong> it is 100 or less. The last line is printed for you.',
+    question: 'Charge the power core! Print each level as it doubles, until it overloads.',
+    expect: '1\n2\n4\n8\n16\n32\n64\nOverload at 128',
+    starter: String.raw`let power = 1;
+
+// your while loop here
+
+console.log("Overload at " + power);
+`,
+    hint: 'while (power <= 100) { print power, then double it with power *= 2 }',
+    solution: String.raw`let power = 1;
+
+while (power <= 100) {
+  console.log(power);
+  power *= 2;
+}
+
+console.log("Overload at " + power);`,
+    check(r, src) {
+      if (!/\bwhile\s*\(/.test(src)) return 'Use a while loop.';
+      if (norm(r.output) !== '1\n2\n4\n8\n16\n32\n64\nOverload at 128') return 'Expected 1, 2, 4 ... 64 on separate lines, then Overload at 128.';
+    },
+  },
+
+  /* ======================= TypeScript ======================= */
+  {
+    id: 'ts-types', lang: 'ts', type: 'console', badge: 'Fix the bug', title: 'Type Trouble',
+    learn: String.raw`<p>TypeScript adds <em>types</em> after a colon. It refuses to run code where the types don't match.</p><pre><code>let lives: number = 3;
+let hero: string = "Ada";
+let alive: boolean = true;</code></pre>`,
+    guide: [
+      { say: String.raw`<b>TypeScript</b> is JavaScript with <em>types</em>. Big game studios and apps use it because it catches bugs <b>before</b> the code runs.` },
+      { say: String.raw`You write the type after a colon: <code>let coins: number = 10;</code> or <code>let name: string = "Mo";</code>. If you put the wrong kind of value in, TypeScript stops you with an error.` },
+      { say: String.raw`Why does it matter? In JavaScript, <code>"5" + 1</code> is <code>"51"</code> (text glued together), but <code>5 + 1</code> is 6. Try it: print <code>"5" + 1</code> and see.`,
+        try: { lang: 'ts', starter: 'console.log("5" + 1);\n', check(src, h) {
+          const r = h.run('ts', src); if (r.error) return r.error;
+          if (norm(r.output) !== '51') return 'Run console.log("5" + 1); exactly as written.';
+        } } },
+      { say: String.raw`See? 51, not 6. That's exactly the kind of bug TypeScript catches. Run the level code, read the error, and fix the type.` },
+    ],
+    task: 'The code won\'t run because of a <strong>type error</strong>. Fix it so it prints <strong>Kai is level 6</strong>.',
+    question: 'Kai just leveled up from 5 to 6, but the player card is broken.',
+    expect: 'Kai is level 6',
+    starter: String.raw`let name: string = "Kai";
+let level: number = "5";
+
+level = level + 1;  // level up!
+console.log(name + " is level " + level);
+`,
+    hint: 'level is supposed to be a number. Look closely at the value it starts with.',
+    solution: String.raw`let name: string = "Kai";
+let level: number = 5;
+
+level = level + 1;  // level up!
+console.log(name + " is level " + level);`,
+    check(r, src) {
+      if (!/level\s*:\s*number/.test(src)) return 'Keep level typed as a number.';
+      if (norm(r.output) !== 'Kai is level 6') return 'Expected: Kai is level 6';
+    },
+  },
+  {
+    id: 'ts-func', lang: 'ts', type: 'platformer', badge: 'Write a function', title: 'Jump Pads',
+    learn: String.raw`<p>TypeScript functions type each parameter, and can type the return value too.</p><pre><code>function area(w: number, h: number): number {
+  return w * h;
+}</code></pre>`,
+    guide: [
+      { say: String.raw`In TypeScript, each function parameter gets a type: <code>function hurt(amount: number)</code>. Then nobody can accidentally call <code>hurt("lots")</code>.` },
+      { say: String.raw`After the parentheses you can say what the function returns. <code>: number</code> means it returns a number, and <code>: void</code> means it returns nothing (it just does something).` },
+      { say: String.raw`Try it: write <code>double(n: number): number</code> that returns n times 2. The code prints double(21).`,
+        try: { lang: 'ts', starter: 'function double(n: number): number {\n  \n}\n\nconsole.log(double(21));\n', check(src, h) {
+          if (!/n\s*:\s*number/.test(src)) return 'Keep the n: number parameter type.';
+          const r = h.run('ts', src); if (r.error) return r.error;
+          if (norm(r.output) !== '42') return 'double(21) printed "' + norm(r.output) + '". Use return n * 2;';
+        } } },
+      { say: String.raw`Now finish the <code>pad</code> function. A pad's y is its height <b>above the ground</b>, so think about how to turn height into y.` },
+    ],
+    task: 'Finish <strong>pad(x, height)</strong> so it builds a 70-wide pad <strong>height</strong> pixels above the ground, then place pads up to the ledge.',
+    world: { ground: [[0, 150]], blocks: [{ x: 650, y: 220, w: 150, h: 230 }], spikes: [[150, 500]], flag: [760, 220] },
+    platforms: true,
+    starter: String.raw`// The ground surface is at y = 400. The ledge is 180 pixels above it.
+function pad(x: number, height: number): void {
+  // build the pad here
+}
+
+pad(200, 50);
+`,
+    hint: 'Height above the ground means y = 400 - height. Then add pads at about x = 340 (110 high) and x = 480 (170 high).',
+    solution: String.raw`function pad(x: number, height: number): void {
+  createPlatform(x, 400 - height, 70);
+}
+
+pad(200, 50);
+pad(340, 110);
+pad(480, 170);`,
+    require(r, src) {
+      if (!/function\s+pad\s*\(\s*x\s*:\s*number/.test(src)) return 'Keep the pad function with its typed parameters.';
+      if (r.platforms.length < 3) return 'You built ' + r.platforms.length + ' pad(s). You need about 3 to reach the ledge.';
+    },
+  },
+
   /* ======================= Python ======================= */
   {
     id: 'py-coins', lang: 'py', type: 'console', badge: 'Console quest', title: 'Count the Coins',
@@ -689,6 +843,78 @@ for item in items:
     },
   },
 
+  {
+    id: 'py-def', lang: 'py', type: 'console', badge: 'Write a function', title: 'Healing Potion',
+    learn: String.raw`<code>def</code> creates a function; <code>return</code> sends a value back.</p><pre><code>def damage(hp, hit):
+    return hp - hit
+
+print(damage(100, 30))</code></pre>`,
+    guide: [
+      { say: String.raw`In Python you make a function with <code>def</code>, its name, parameters in parentheses, and a colon. The body is indented.` },
+      { say: String.raw`<code>return</code> hands a value back to the code that called the function, so you can print it or store it.` },
+      { say: String.raw`Try it: write <code>def square(n):</code> that returns n times n, then print <code>square(7)</code>.`,
+        try: { lang: 'py', starter: 'def square(n):\n    \n', check(src, h) {
+          if (!/^\s*def\s+square/m.test(src)) return 'Start with def square(n):';
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (norm(r.output) !== '49') return 'square(7) should print 49. You printed: ' + (norm(r.output) || 'nothing');
+        } } },
+      { say: String.raw`Now brew the potion. Careful: health can never go above 100! You'll need an <code>if</code> (or Python's <code>min()</code>).` },
+    ],
+    task: 'Make <strong>heal(hp)</strong> return hp + 25, but <strong>never more than 100</strong>.',
+    question: 'The healing potion adds 25 HP, but health is capped at 100. Heal a player at 50 HP and one at 90 HP.',
+    expect: '75\n100',
+    starter: String.raw`def heal(hp):
+    return hp
+
+print(heal(50))
+print(heal(90))
+`,
+    hint: 'Work out hp + 25 first. If it is bigger than 100, return 100 instead.',
+    solution: String.raw`def heal(hp):
+    new_hp = hp + 25
+    if new_hp > 100:
+        return 100
+    return new_hp
+
+print(heal(50))
+print(heal(90))`,
+    check(r, src) {
+      if (!/^\s*def\s+heal/m.test(src)) return 'Keep the heal function.';
+      if (norm(r.output) !== '75\n100') return 'Expected 75 and 100 on separate lines.';
+    },
+  },
+  {
+    id: 'py-grid', lang: 'py', type: 'console', badge: 'Console quest', title: 'Star Map',
+    learn: String.raw`<p>A loop inside a loop is a <em>nested loop</em>. <code>end=""</code> stops print from starting a new line.</p><pre><code>for row in range(2):
+    for col in range(3):
+        print("o", end="")
+    print()</code></pre>`,
+    guide: [
+      { say: String.raw`You can put a loop <b>inside</b> another loop. That's a <em>nested loop</em>. Games use them for grids: tile maps, chess boards, inventories.` },
+      { say: String.raw`Normally <code>print()</code> starts a new line after printing. <code>print("x", end="")</code> stays on the same line, and an empty <code>print()</code> just ends the line.` },
+      { say: String.raw`Try it: print <b>#####</b> (five #) on one line using a loop and <code>end=""</code>.`,
+        try: { lang: 'py', starter: 'for i in range(5):\n    \n', check(src, h) {
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (norm(r.output) !== '#####') return 'Expected ##### on one line. You printed: ' + (norm(r.output) || 'nothing');
+        } } },
+      { say: String.raw`Now draw a whole star map: rows <b>and</b> columns. The outer loop makes rows, the inner loop fills each row.` },
+    ],
+    task: 'Print a grid of stars, <strong>3 rows</strong> of <strong>4 stars</strong>, using <strong>nested loops</strong>.',
+    question: 'Draw the star map: 3 rows with 4 stars in each row.',
+    expect: '****\n****\n****',
+    starter: String.raw`# 3 rows, 4 stars per row
+`,
+    hint: 'for row in range(3): then inside it, for col in range(4): print("*", end=""). After the inner loop, print() to end the row.',
+    solution: String.raw`for row in range(3):
+    for col in range(4):
+        print("*", end="")
+    print()`,
+    check(r, src) {
+      if ((src.match(/^\s*for\b/gm) || []).length < 2) return 'Use two loops, one inside the other.';
+      if (norm(r.output) !== '****\n****\n****') return 'Expected 3 rows of 4 stars.';
+    },
+  },
+
   /* ======================= HTML ======================= */
   {
     id: 'html-divs', lang: 'html', type: 'platformer', badge: 'Build with tags', title: 'Div Bridges',
@@ -794,6 +1020,44 @@ for item in items:
     },
   },
 
+  {
+    id: 'html-table', lang: 'html', type: 'web', badge: 'Make a web page', title: 'High Score Table',
+    learn: String.raw`<code>&lt;table&gt;</code> holds rows (<code>&lt;tr&gt;</code>). Header cells are <code>&lt;th&gt;</code>, normal cells <code>&lt;td&gt;</code>.</p><pre><code>&lt;table&gt;
+  &lt;tr&gt;&lt;th&gt;Item&lt;/th&gt;&lt;/tr&gt;
+  &lt;tr&gt;&lt;td&gt;Key&lt;/td&gt;&lt;/tr&gt;
+&lt;/table&gt;</code></pre>`,
+    guide: [
+      { say: String.raw`Tables show data in rows and columns, like a leaderboard. A <code>&lt;table&gt;</code> contains rows, and each row is a <code>&lt;tr&gt;</code> (table row).` },
+      { say: String.raw`Inside a row go the cells. <code>&lt;th&gt;</code> is a <b>header</b> cell (bold title), and <code>&lt;td&gt;</code> is a normal data cell.` },
+      { say: String.raw`Try it: make a table with one row that has two <code>td</code> cells: <b>Ana</b> and <b>500</b>.`,
+        try: { lang: 'html', starter: '<table>\n  \n</table>\n', check(src) {
+          const d = new DOMParser().parseFromString(src, 'text/html');
+          const cells = [...d.querySelectorAll('table tr td')].map((td) => td.textContent.trim());
+          if (!d.querySelector('table tr')) return 'Put a <tr> row inside the table.';
+          if (cells.join(',') !== 'Ana,500') return 'The row should hold <td>Ana</td> and <td>500</td>.';
+        } } },
+      { say: String.raw`Now build the full leaderboard with a header row on top.` },
+    ],
+    task: 'Make a <strong>table</strong> with a header row (<strong>th</strong> cells <strong>Name</strong> and <strong>Score</strong>) and at least <strong>2 player rows</strong>.',
+    starter: String.raw`<h2>High Scores</h2>
+`,
+    hint: 'First <tr> holds two <th> cells. Each player row holds two <td> cells.',
+    solution: String.raw`<h2>High Scores</h2>
+<table>
+  <tr><th>Name</th><th>Score</th></tr>
+  <tr><td>Ana</td><td>500</td></tr>
+  <tr><td>Byte</td><td>420</td></tr>
+</table>`,
+    check(r) {
+      const d = r.doc;
+      if (!d.querySelector('table')) return 'Add a <table>.';
+      const th = [...d.querySelectorAll('table th')].map((x) => x.textContent.trim().toLowerCase());
+      if (!th.includes('name') || !th.includes('score')) return 'The header row needs <th>Name</th> and <th>Score</th>.';
+      const rows = [...d.querySelectorAll('table tr')].filter((tr) => tr.querySelectorAll('td').length >= 2).length;
+      if (rows < 2) return 'Add at least 2 player rows, each with two <td> cells.';
+    },
+  },
+
   /* ======================= CSS ======================= */
   {
     id: 'css-door', lang: 'css', type: 'platformer', badge: 'Style the level', title: 'Locked Door',
@@ -871,6 +1135,57 @@ for item in items:
     solution: String.raw`#lift {
   top: 325px;
 }`,
+  },
+
+  {
+    id: 'css-style', lang: 'css', type: 'web', badge: 'Style a web page', title: 'Glow Up',
+    learn: String.raw`<p>Tag selectors style every tag of that kind. Colors can be names or hex codes.</p><pre><code>p { color: white; }
+a { background: #222; border-radius: 4px; }</code></pre>`,
+    guide: [
+      { say: String.raw`You can style by <b>tag name</b> too: <code>p { ... }</code> styles every paragraph. No # or dot needed.` },
+      { say: String.raw`Handy properties: <code>color</code> is the text color, <code>background</code> is the fill behind it, and <code>border-radius</code> rounds the corners. Colors can be names like <code>gold</code> or codes like <code>#ff00aa</code>.` },
+      { say: String.raw`Try it: make every <code>h2</code> <b>red</b>.`,
+        try: { lang: 'css', starter: '', check(src) {
+          let rules; try { rules = parseCSS(src); } catch (e) { return e.message; }
+          const r = rules.find((x) => x.selectors.includes('h2'));
+          if (!r) return 'Start the rule with the selector h2';
+          if (!r.decls.color || !CSS.supports('color', r.decls.color)) return 'Inside the braces write color: red;';
+        } } },
+      { say: String.raw`Now give the title screen a glow-up. The HTML is already written; you only write the CSS. Press Run to see it change.` },
+    ],
+    task: 'Style the page: give <strong>body</strong> a background, give <strong>h1</strong> a text color, and round the <strong>button</strong> corners with border-radius.',
+    html: String.raw`<h1>Code Quest</h1>
+<p>Press Start to begin your adventure.</p>
+<button>Start</button>`,
+    starter: String.raw`/* The page HTML is already written. Style it here! */
+
+`,
+    hint: 'Three rules: body { background: ...; } then h1 { color: ...; } then button { border-radius: ...; }',
+    solution: String.raw`body {
+  background: #1b1f3a;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+h1 {
+  color: gold;
+}
+
+button {
+  border-radius: 12px;
+  padding: 10px 30px;
+}`,
+    check(r) {
+      const find = (sel) => r.rules.find((x) => x.selectors.includes(sel));
+      const body = find('body');
+      if (!body || !(body.decls.background || body.decls['background-color'])) return 'Give body a background, like background: navy;';
+      const h1 = find('h1');
+      if (!h1 || !h1.decls.color) return 'Give h1 a color, like color: gold;';
+      if (!CSS.supports('color', h1.decls.color)) return '"' + h1.decls.color + '" is not a color the browser knows.';
+      const b = find('button');
+      if (!b || !b.decls['border-radius']) return 'Round the button with border-radius, like border-radius: 10px;';
+    },
   },
 
   /* ======================= C ======================= */
@@ -1042,6 +1357,59 @@ int main() {
     },
   },
 
+  {
+    id: 'c-array', lang: 'c', type: 'console', badge: 'Console quest', title: 'Top Score',
+    learn: String.raw`<p>C arrays hold values of one type in curly braces. Index from 0.</p><pre><code>int lives[3] = {3, 2, 5};
+printf("%d\n", lives[2]);  // 5</code></pre>`,
+    guide: [
+      { say: String.raw`In C, an array is declared with its type and size: <code>int hp[3] = {90, 40, 75};</code>. The values go in <b>curly braces</b>.` },
+      { say: String.raw`To find the biggest value, keep a "best so far" variable. Loop through the array, and whenever a value beats it, replace it.` },
+      { say: String.raw`Try it: print the sum of all values in <code>nums</code> with a loop. It should print 10.`,
+        try: { lang: 'c', starter: 'int nums[4] = {1, 2, 3, 4};\nint total = 0;\n', check(src, h) {
+          if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop to add them up.';
+          const r = h.run('c', src); if (r.error) return r.error;
+          if (norm(r.output) !== '10') return 'Expected 10. You printed: ' + (norm(r.output) || 'nothing') + '. Add each nums[i] to total, then printf it.';
+        } } },
+      { say: String.raw`Now find the top score. The game will test it with a different list of scores too.` },
+    ],
+    task: 'Loop through <strong>scores</strong> and keep the biggest in <strong>best</strong>. The game tests other scores too.',
+    question: 'Who got the high score? Find the biggest number in the scores array.',
+    expect: 'Best: 95',
+    starter: String.raw`#include <stdio.h>
+
+int main() {
+    int scores[5] = {40, 95, 72, 88, 61};
+    int best = scores[0];
+    // check every score and keep the biggest
+
+    printf("Best: %d\n", best);
+    return 0;
+}
+`,
+    hint: 'for (int i = 0; i < 5; i++) { if scores[i] is bigger than best, set best to it }',
+    solution: String.raw`#include <stdio.h>
+
+int main() {
+    int scores[5] = {40, 95, 72, 88, 61};
+    int best = scores[0];
+    for (int i = 0; i < 5; i++) {
+        if (scores[i] > best) {
+            best = scores[i];
+        }
+    }
+    printf("Best: %d\n", best);
+    return 0;
+}`,
+    check(r, src, ctx) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop to check every score.';
+      if (norm(r.output) !== 'Best: 95') return 'Expected: Best: 95';
+      if (!/\{40, 95, 72, 88, 61\}/.test(src)) return 'Keep the scores array as it is so the game can test your code.';
+      const r2 = ctx.run(src.replace('{40, 95, 72, 88, 61}', '{12, 7, 33, 99, 5}'));
+      if (r2.error || norm(r2.output) !== 'Best: 99') return 'With scores {12, 7, 33, 99, 5} it printed "' + norm(r2.output) + '" instead of Best: 99.';
+      ctx.log('Test: {12, 7, 33, 99, 5} printed "Best: 99". Correct.', 'ok');
+    },
+  },
+
   /* ======================= C++ ======================= */
   {
     id: 'cpp-bug', lang: 'cpp', type: 'console', badge: 'Fix the bug', title: 'Off by One',
@@ -1186,6 +1554,67 @@ int speed = 4;
     },
   },
 
+  {
+    id: 'cpp-bar', lang: 'cpp', type: 'console', badge: 'Console quest', title: 'Health Bar',
+    learn: String.raw`<p>Print without <code>endl</code> to stay on the same line. <code>if</code> inside a loop picks what to draw.</p><pre><code>for (int i = 0; i &lt; 3; i++) {
+    cout &lt;&lt; "=";
+}
+cout &lt;&lt; endl;</code></pre>`,
+    guide: [
+      { say: String.raw`Health bars are drawn with loops! Each character stands for one point of health.` },
+      { say: String.raw`If you print with <code>cout</code> but leave out <code>endl</code>, the next print continues on the <b>same</b> line. Put an <code>if</code> inside the loop to choose which character to draw.` },
+      { say: String.raw`Try it: use a loop to print <b>&gt;&gt;&gt;&gt;</b> (four &gt;) on one line.`,
+        try: { lang: 'cpp', starter: '', check(src, h) {
+          if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop.';
+          const r = h.run('cpp', src); if (r.error) return r.error;
+          if (norm(r.output) !== '>>>>') return 'Expected >>>> on one line. You printed: ' + (norm(r.output) || 'nothing');
+        } } },
+      { say: String.raw`Now draw the health bar: a <b>#</b> for each point of hp, and a <b>-</b> for each missing point. The game will test other hp values too.` },
+    ],
+    task: 'Draw a 10-slot health bar: <strong>#</strong> for each point of <strong>hp</strong>, <strong>-</strong> for the rest. The game tests other hp values too.',
+    question: 'The hero has 6 out of 10 health. Draw the health bar.',
+    expect: '[######----]',
+    starter: String.raw`#include <iostream>
+using namespace std;
+
+int main() {
+    int hp = 6;
+    int maxHp = 10;
+    cout << "[";
+    // draw the bar here
+
+    cout << "]" << endl;
+    return 0;
+}
+`,
+    hint: 'Loop i from 0 to maxHp. If i < hp print "#", else print "-".',
+    solution: String.raw`#include <iostream>
+using namespace std;
+
+int main() {
+    int hp = 6;
+    int maxHp = 10;
+    cout << "[";
+    for (int i = 0; i < maxHp; i++) {
+        if (i < hp) {
+            cout << "#";
+        } else {
+            cout << "-";
+        }
+    }
+    cout << "]" << endl;
+    return 0;
+}`,
+    check(r, src, ctx) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop to draw the bar.';
+      if (norm(r.output) !== '[######----]') return 'Expected [######----] with 6 # and 4 -.';
+      if (!/hp\s*=\s*6/.test(src)) return 'Keep the line int hp = 6; so the game can test your code.';
+      const r2 = ctx.run(src.replace(/hp\s*=\s*6/, 'hp = 3'));
+      if (r2.error || norm(r2.output) !== '[###-------]') return 'With hp = 3 it printed "' + norm(r2.output) + '" instead of [###-------]. Use hp in your loop.';
+      ctx.log('Test: hp = 3 printed "[###-------]". Correct.', 'ok');
+    },
+  },
+
   /* ======================= Java ======================= */
   {
     id: 'java-shop', lang: 'java', type: 'console', badge: 'Console quest', title: 'The Sword Shop',
@@ -1282,6 +1711,100 @@ w.toLowerCase();  // "hi"</code></pre>`,
       const r2 = ctx.run(src.replace(/name\s*=\s*"Pixel"/, 'name = "Ada"'));
       if (r2.error || norm(r2.output) !== 'ADA!') return 'With name = "Ada" it should print ADA! Use the name variable.';
       ctx.log('Test: name = "Ada" printed "ADA!". Correct.', 'ok');
+    },
+  },
+  {
+    id: 'java-loot', lang: 'java', type: 'console', badge: 'Console quest', title: 'Loot Counter',
+    learn: String.raw`<p>Java arrays: <code>int[] name = {...};</code>. The for-each loop visits every value.</p><pre><code>int[] xp = {10, 20};
+for (int v : xp) {
+    System.out.println(v);
+}</code></pre>`,
+    guide: [
+      { say: String.raw`In Java, an array type has square brackets: <code>int[] gems = {3, 7, 1};</code>. <code>gems.length</code> tells you how many items it holds.` },
+      { say: String.raw`Java has a short loop for arrays called <em>for-each</em>: <code>for (int g : gems) { ... }</code> runs once per value, with <code>g</code> set to each one.` },
+      { say: String.raw`Try it: use a for-each loop to print every value in <code>xp</code> times 2.`,
+        try: { lang: 'java', starter: 'int[] xp = {5, 10, 15};\n', check(src, h) {
+          if (!/for\s*\(\s*\w+\s+\w+\s*:/.test(src)) return 'Use a for-each loop: for (int v : xp)';
+          const r = h.run('java', src); if (r.error) return r.error;
+          if (norm(r.output) !== '10\n20\n30') return 'Expected 10, 20, 30. You printed: ' + (norm(r.output).replace(/\n/g, ', ') || 'nothing');
+        } } },
+      { say: String.raw`Now count up all the loot from the dungeon. The game will test it with a different treasure pile too.` },
+    ],
+    task: 'Add up every value in <strong>loot</strong> with a loop and print <strong>Total gold: 55</strong>. The game tests other loot too.',
+    question: 'The dungeon chests are open. How much gold did you find in total?',
+    expect: 'Total gold: 55',
+    starter: String.raw`public class Main {
+    public static void main(String[] args) {
+        int[] loot = {12, 5, 30, 8};
+        int total = 0;
+        // add up the loot
+
+        System.out.println("Total gold: " + total);
+    }
+}
+`,
+    hint: 'for (int g : loot) { total += g; }',
+    solution: String.raw`public class Main {
+    public static void main(String[] args) {
+        int[] loot = {12, 5, 30, 8};
+        int total = 0;
+        for (int g : loot) {
+            total += g;
+        }
+        System.out.println("Total gold: " + total);
+    }
+}`,
+    check(r, src, ctx) {
+      if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop to add up the loot.';
+      if (norm(r.output) !== 'Total gold: 55') return 'Expected: Total gold: 55';
+      if (!/\{12, 5, 30, 8\}/.test(src)) return 'Keep the loot array as it is so the game can test your code.';
+      const r2 = ctx.run(src.replace('{12, 5, 30, 8}', '{100, 1, 1}'));
+      if (r2.error || norm(r2.output) !== 'Total gold: 102') return 'With loot {100, 1, 1} it printed "' + norm(r2.output) + '" instead of Total gold: 102.';
+      ctx.log('Test: {100, 1, 1} printed "Total gold: 102". Correct.', 'ok');
+    },
+  },
+  {
+    id: 'java-forever', lang: 'java', type: 'platformer', badge: 'Fix the bug', title: 'The Endless Loop',
+    learn: String.raw`<p>A while loop must change something its condition checks, or it never ends.</p><pre><code>int fuel = 3;
+while (fuel &gt; 0) {
+    fuel--;
+}</code></pre>`,
+    guide: [
+      { say: String.raw`Uh oh. Someone wrote a loop that <b>never ends</b>. That's called an <em>infinite loop</em>, and it can freeze a whole game.` },
+      { say: String.raw`A while loop stops only when its condition becomes false. If nothing inside the loop changes the variables in the condition, it stays true forever.` },
+      { say: String.raw`Quick check: <code>int n = 0; while (n &lt; 3) { n += 1; }</code> How many times does the loop run?`,
+        try: { answer: true, check(v) { if (Number(v) !== 3) return 'n goes 0, 1, 2 and stops when it reaches 3. Count those.'; } } },
+      { say: String.raw`Right! Now press Run on the level code and watch what happens. Then make the loop move each step right and up, so it eventually stops.` },
+    ],
+    task: 'The loop never stops. Fix it so each step goes <strong>90 right</strong> and <strong>30 up</strong>, then climb to the flag.',
+    world: { ground: [[0, 120]], blocks: [{ x: 640, y: 230, w: 160, h: 220 }], spikes: [[120, 520]], flag: [760, 230] },
+    platforms: true,
+    starter: String.raw`public class Main {
+    public static void main(String[] args) {
+        int x = 150;
+        int y = 370;
+        // BUG: this loop never stops!
+        while (y > 230) {
+            createPlatform(x, y, 70);
+        }
+    }
+}
+`,
+    hint: 'Inside the loop, after createPlatform, change x and y. Up means y gets smaller.',
+    solution: String.raw`public class Main {
+    public static void main(String[] args) {
+        int x = 150;
+        int y = 370;
+        while (y > 230) {
+            createPlatform(x, y, 70);
+            x += 90;
+            y -= 30;
+        }
+    }
+}`,
+    require(r, src) {
+      if (!/\bwhile\s*\(/.test(src)) return 'Keep the while loop and fix it.';
+      if (r.platforms.length < 4) return 'Only ' + r.platforms.length + ' step(s) were built. Check your loop.';
     },
   },
   {
@@ -1431,11 +1954,16 @@ function pyCode(c) {
     .replace(/\b(end|sep)\s*=(?!=)\s*/g, '__KW("$1"),');
 }
 function pyExpr(e) {
-  return scanPieces(e, '#').map((p) => {
+  const pieces = scanPieces(e, '#');
+  return pieces.map((p, i) => {
     if (p.t === 'code') return pyCode(p.v);
-    if (!p.f) return p.v;
-    const inner = p.v.slice(1, -1).replace(/`/g, '\\`').replace(/\{([^}]*)\}/g, (m, x) => '${__str(' + pyExpr(x) + ')}');
-    return '`' + inner + '`';
+    let s = p.v;
+    if (p.f) s = '`' + p.v.slice(1, -1).replace(/`/g, '\\`').replace(/\{([^}]*)\}/g, (m, x) => '${__str(' + pyExpr(x) + ')}') + '`';
+    // Python string repetition: "*" * 4
+    const next = pieces[i + 1];
+    const m = next && next.t === 'code' && next.v.match(/^\s*\*\s*([A-Za-z_]\w*|\d+)/);
+    if (m) { next.v = next.v.slice(m[0].length); s = '(' + s + ').repeat(' + m[1] + ')'; }
+    return s;
   }).join('');
 }
 function pyStripComment(line) {
@@ -1538,6 +2066,11 @@ function transpileCLike(src, lang) {
     .replace(/\b(?:(?:public|private|protected|static|final)\s+)*(?:void|int|long|short|float|double|char|bool|boolean|auto|String|std::string|string)\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*\{/g,
       (m, name, params) => 'function ' + name + '(' + params.split(',').map((p) => (p.trim().match(/([A-Za-z_]\w*)\s*(?:\[\s*\])?$/) || ['', ''])[1]).filter(Boolean).join(', ') + ') {')
     .replace(/\.length\s*\(\s*\)/g, '.length')
+    // arrays: Java int[] a = {..}; and C int a[3] = {..};
+    .replace(/\b(?:int|long|short|float|double|char|boolean|bool|String|string)\s*\[\s*\]\s+([A-Za-z_]\w*)\s*=\s*\{([^}]*)\}/g, 'let $1 = [$2]')
+    .replace(/\b(?:(?:const|static|unsigned)\s+)*(?:int|long|short|float|double|char|bool|string|std::string)\s+([A-Za-z_]\w*)\s*\[[^\]]*\]\s*=\s*\{([^}]*)\}/g, 'let $1 = [$2]')
+    // for-each: for (int x : list)
+    .replace(/\bfor\s*\(\s*(?:const\s+)?[\w:]+\s*&?\s+([A-Za-z_]\w*)\s*:\s*([^)]+)\)/g, 'for (let $1 of $2)')
     .replace(/(?:std::)?cout\s*<<([^;]*);/g, (m, body) => '__cout(' + splitTop(body, '<<').join(', ') + ');')
     .replace(/(?:std::)?endl\b/g, '__ENDL')
     .replace(/System\.out\.println\s*\(/g, '__println(')
@@ -1551,8 +2084,59 @@ function transpileCLike(src, lang) {
   return code;
 }
 
+/* ---------------- TypeScript -> JavaScript (with a small type checker) ---------------- */
+const TS_TYPES = ['number', 'string', 'boolean'];
+function literalType(expr) {
+  const e = expr.trim();
+  if (/^(["'`])[^]*\1$/.test(e)) return 'string';
+  if (/^-?\d+(\.\d+)?$/.test(e)) return 'number';
+  if (/^(true|false)$/.test(e)) return 'boolean';
+  return null;
+}
+function typeCheckTS(src) {
+  const declared = {}, funcs = {};
+  const lines = src.split('\n').map((l) => l.replace(/\/\/.*$/, ''));
+  function check(type, expr, ln, what) {
+    const t = literalType(expr);
+    if (!TS_TYPES.includes(type) || !t || t === type) return;
+    let tip = '';
+    if (type === 'number' && t === 'string') tip = ' Numbers don\'t have quotes around them.';
+    if (type === 'string' && t === 'number') tip = ' Text needs quotes around it.';
+    throw new GameError('error TS2322 on line ' + ln + ': ' + what + "Type '" + t + "' is not assignable to type '" + type + "'." + tip);
+  }
+  lines.forEach((code) => {
+    const m = code.match(/function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)/);
+    if (m) funcs[m[1]] = m[2].split(',').map((p) => (p.match(/:\s*(\w+)/) || [])[1]);
+  });
+  lines.forEach((code, i) => {
+    let m;
+    if ((m = code.match(/\b(?:let|const|var)\s+([A-Za-z_$][\w$]*)\s*:\s*(\w+)\s*=\s*([^;]+)/))) {
+      declared[m[1]] = m[2];
+      check(m[2], m[3], i + 1, '');
+    } else if ((m = code.match(/^\s*([A-Za-z_$][\w$]*)\s*=(?!=)\s*([^;]+)/)) && declared[m[1]]) {
+      check(declared[m[1]], m[2], i + 1, '');
+    }
+    if (/\bfunction\b/.test(code)) return;
+    Object.entries(funcs).forEach(([name, types]) => {
+      const re = new RegExp('\\b' + name.replace(/\$/g, '\\$') + '\\s*\\(([^()]*)\\)', 'g');
+      let c;
+      while ((c = re.exec(code))) {
+        splitTop(c[1], ',').forEach((arg, k) => check(types[k], arg, i + 1, 'argument ' + (k + 1) + ' of ' + name + '(): '));
+      }
+    });
+  });
+}
+function transpileTS(src) {
+  typeCheckTS(src);
+  return src
+    .replace(/(\b(?:let|const|var)\s+[A-Za-z_$][\w$]*)\s*:\s*[\w$<>\[\]|. ]+?(?=\s*[=;\n])/g, '$1')
+    .replace(/(function\s+[A-Za-z_$][\w$]*\s*)\(([^)]*)\)\s*(?::\s*[\w$<>\[\]|. ]+)?\s*\{/g,
+      (m, head, params) => head + '(' + params.split(',').map((p) => p.replace(/\??\s*:[^]*$/, '').trim()).filter(Boolean).join(', ') + ') {');
+}
+
 function transpile(lang, src) {
   if (lang === 'js') return src;
+  if (lang === 'ts') return transpileTS(src);
   if (lang === 'py') return transpilePy(src);
   return transpileCLike(src, lang);
 }
@@ -1570,7 +2154,7 @@ function friendlyError(e, lang) {
   }
   if ((m = msg.match(/(\S+) is not a function/))) return "TypeError: " + m[1].replace(/__/g, '') + ' is not a function.';
   if (e instanceof SyntaxError) {
-    if (lang === 'js') return 'SyntaxError: ' + msg + '. Check your brackets, quotes and commas.';
+    if (lang === 'js' || lang === 'ts') return 'SyntaxError: ' + msg + '. Check your brackets, quotes and commas.';
     return 'Syntax error: the code could not be understood (' + msg + '). Check your brackets, quotes and commas.';
   }
   return (e && e.name ? e.name + ': ' : '') + msg;
@@ -1704,13 +2288,22 @@ function runCSS(level, src) {
   const notes = [];
   let rules;
   try { rules = parseCSS(src); } catch (e) { return { error: e.message, notes, platforms: [] }; }
+  if (level.type === 'web') {
+    const doc = new DOMParser().parseFromString('<style>' + src.replace(/<\/?style/gi, '') + '</style>' + level.html, 'text/html');
+    rules.forEach((r) => r.selectors.forEach((sel) => {
+      let hit = 0; try { hit = doc.querySelectorAll(sel).length; } catch (e) { /* invalid selector */ }
+      if (!hit && sel !== 'body' && sel !== 'html') notes.push(['warn', 'Selector ' + sel + ' did not match anything on the page.']);
+    }));
+    return { rules, doc, notes, platforms: [], output: '' };
+  }
   const overrides = {};
   const known = new Set(['display', 'visibility', 'width', 'height', 'left', 'top', 'background', 'background-color', 'opacity']);
   const targets = (level.world.blocks || []);
+  const names = targets.filter((b) => b.id || b.cls).map((b) => (b.id ? '#' + b.id : '.' + b.cls)).join(' or ');
   rules.forEach((r) => {
     r.selectors.forEach((sel) => {
       const hits = targets.filter((b) => (b.id && sel === '#' + b.id) || (b.cls && sel === '.' + b.cls));
-      if (!hits.length) { notes.push(['warn', 'Selector ' + sel + ' did not match anything in this level. Try #door or .bridge.']); return; }
+      if (!hits.length) { notes.push(['warn', 'Selector ' + sel + ' did not match anything in this level. Try ' + names + '.']); return; }
       hits.forEach((b) => {
         const key = b.id || b.cls;
         overrides[key] = Object.assign(overrides[key] || {}, r.decls);
@@ -1975,7 +2568,7 @@ function saveProgress() { store('ucsig-done', [...done]); }
 function saveDraft() { drafts[LEVELS[current].id] = editor.get(); store('ucsig-drafts', drafts); }
 
 /* ----- Code editors (CodeMirror, with a plain textarea fallback) ----- */
-const CM_MODES = { js: 'javascript', py: 'python', html: 'htmlmixed', css: 'css', c: 'text/x-csrc', cpp: 'text/x-c++src', java: 'text/x-java' };
+const CM_MODES = { js: 'javascript', ts: 'text/typescript', py: 'python', html: 'htmlmixed', css: 'css', c: 'text/x-csrc', cpp: 'text/x-c++src', java: 'text/x-java' };
 function makeEditor(textarea, opts) {
   if (window.CodeMirror) {
     const cm = CodeMirror.fromTextArea(textarea, {
@@ -2072,7 +2665,7 @@ function checkTry() {
   if (!g || !g.try) return;
   const input = g.try.answer ? $('tryAnswer').value.trim() : tryEditor.get();
   if (!input.trim()) { $('tryFb').textContent = 'Type your answer first.'; $('tryFb').className = 'warn'; return; }
-  if (!g.try.answer && ['js', 'py', 'c', 'cpp', 'java'].includes(g.try.lang)) {
+  if (!g.try.answer && ['js', 'ts', 'py', 'c', 'cpp', 'java'].includes(g.try.lang)) {
     const r = tryRun(g.try.lang, input);
     const out = r.error ? r.error : norm(r.output) || '(nothing was printed)';
     $('tryOut').textContent = out;
@@ -2188,7 +2781,7 @@ function openLevel(i) {
   }
   if (lv.type === 'web') {
     renderPreview(null);
-    log('Write HTML in the editor and press Run to see it in the browser.', 'info');
+    log('Write ' + L.name + ' in the editor and press Run to see the page in the browser.', 'info');
   }
   if (isPlat) {
     game.level = lv; game.won = false; game.deaths = 0; game.codeOk = !lv.require;
@@ -2292,7 +2885,7 @@ function complete(msg) {
   byteSay(CHEERS[Math.floor(Math.random() * CHEERS.length)], 'happy');
   $('winMsg').textContent = msg;
   $('winNext').textContent = current === LEVELS.length - 1 ? 'Back to all levels' : 'Next level →';
-  if (done.size === LEVELS.length && current === LEVELS.length - 1) $('winMsg').textContent = msg + ' You finished every level in all seven languages!';
+  if (done.size === LEVELS.length && current === LEVELS.length - 1) $('winMsg').textContent = msg + ' You finished every level in all eight languages!';
   $('win').hidden = false;
   $('winNext').focus({ preventScroll: true });
 }
