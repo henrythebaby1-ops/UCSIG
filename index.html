@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <style>
 /* Layout: a game cartridge shelf (level map) and a two-column workbench: lesson + code editor on the left, live stage + console on the right. */
 :root {
@@ -157,9 +158,92 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
 #consoleOut .ok { color: var(--good); }
 #consoleOut .warn { color: var(--accent); }
 
+/* Byte the tutor */
+.hero-side { display: grid; gap: 14px; min-width: 0; }
+.tutor { display: flex; gap: 14px; align-items: flex-start; }
+.byte { position: relative; width: 52px; height: 60px; flex: none; margin-top: 4px; }
+.byte i { position: absolute; display: block; }
+.byte .ant { left: 22px; top: 0; width: 8px; height: 8px; background: var(--accent); border-radius: 2px; transform-origin: 50% 100%; }
+.byte .head { left: 4px; top: 8px; width: 44px; height: 38px; background: var(--ink); border-radius: 5px; }
+.byte .visor { left: 7px; top: 9px; width: 30px; height: 16px; background: #11132a; border-radius: 3px; }
+.byte .eye { right: 5px; top: 4px; width: 8px; height: 8px; background: var(--code); border-radius: 2px; transition: all .2s; }
+.byte .feet { left: 9px; bottom: 0; width: 34px; height: 12px; background: linear-gradient(90deg, var(--muted) 0 11px, transparent 11px 23px, var(--muted) 23px); }
+.byte.happy .eye { height: 5px; top: 5px; border-radius: 6px 6px 1px 1px; background: var(--good); }
+.byte.sad .eye { height: 3px; top: 9px; background: var(--danger); }
+.byte.think .eye { right: 17px; top: 2px; background: var(--accent); }
+.bubble { position: relative; flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.bubble::before { content: ""; position: absolute; left: -7px; top: 22px; width: 12px; height: 12px; background: var(--panel-2); border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); transform: rotate(45deg); }
+.bubble .who { font-family: var(--f-display); font-size: 11px; color: var(--accent); letter-spacing: .08em; margin-bottom: 4px; display: flex; gap: 8px; }
+.bubble .who span { color: var(--muted); }
+.bubble code { font-size: .9em; background: #0b0d1e; padding: 1px 5px; border-radius: 3px; color: var(--code); }
+.bubble .sub { color: var(--muted); font-size: 13px; }
+#say strong { color: var(--accent); }
+.try { margin-top: 12px; display: grid; gap: 8px; }
+.try-ed { position: relative; background: #0b0d1e; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.try-ed:focus-within { border-color: var(--accent); }
+.try-ed .pill { position: absolute; right: 6px; top: 6px; z-index: 3; font-size: 9px; }
+.try-ed .CodeMirror { height: auto; min-height: 64px; }
+.try-ed .CodeMirror-scroll { min-height: 64px; max-height: 200px; }
+#tryAnswer { width: 140px; background: #0b0d1e; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); padding: 8px 10px; font: 15px var(--f-code); }
+#tryAnswer:focus { outline: none; border-color: var(--accent); }
+.try-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#tryFb { font-size: 13px; min-width: 0; }
+#tryFb.ok { color: var(--good); font-weight: 700; }
+#tryFb.warn { color: var(--accent); }
+#tryOut { margin: 0; background: #0b0d1e; border-radius: 6px; padding: 8px 10px; font-size: 12px; white-space: pre-wrap; color: var(--ink); max-height: 120px; overflow: auto; }
+#tryOut::before { content: "console"; display: block; font-family: var(--f-display); font-size: 9px; color: var(--muted); letter-spacing: .08em; margin-bottom: 2px; }
+#tryOut.err { color: var(--danger); }
+.btn.sm { padding: 5px 11px; font-size: 13px; }
+.tnav { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.tnav #tSkip { margin-right: auto; }
+.dots { display: flex; gap: 5px; margin-right: 6px; }
+.dots i { width: 7px; height: 7px; border-radius: 2px; background: var(--line); }
+.dots i.past { background: var(--muted); }
+.dots i.on { background: var(--accent); }
+.notes { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.notes details { flex: 1 1 260px; min-width: 0; }
+.notes summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px 0; }
+.notes summary:hover { color: var(--ink); }
+#cheat { padding-top: 8px; }
+#cheat h3 { font-family: var(--f-display); font-size: 11px; color: var(--muted); letter-spacing: .08em; margin: 0 0 6px; font-weight: 400; }
+@media (prefers-reduced-motion: no-preference) {
+  .byte .eye { animation: blink 4s infinite; }
+  .byte.bounce { animation: hop .6s cubic-bezier(.3, 1.6, .5, 1); }
+  .byte.wave .ant { animation: wiggle 1s ease-in-out 2; }
+}
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-12px); } 100% { transform: translateY(0); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-25deg); } 75% { transform: rotate(25deg); } }
+
+/* CodeMirror theme matching the game */
+.ed-body .CodeMirror { flex: 1; min-width: 0; height: 100%; }
+.CodeMirror { background: transparent; color: var(--ink); font-family: var(--f-code); font-size: 13.5px; line-height: 1.6; }
+.cm-s-byte .CodeMirror-gutters { background: #0b0d1e; border-right: 1px solid #1d2147; }
+.cm-s-byte .CodeMirror-linenumber { color: #4d5390; }
+.cm-s-byte .CodeMirror-cursor { border-left: 2px solid var(--accent); }
+.cm-s-byte .CodeMirror-activeline-background { background: rgba(255, 255, 255, .035); }
+.cm-s-byte .CodeMirror-selected, .cm-s-byte.CodeMirror-focused .CodeMirror-selected { background: rgba(111, 140, 255, .28); }
+.cm-s-byte .CodeMirror-matchingbracket { color: var(--good) !important; text-decoration: underline; }
+.cm-s-byte .cm-keyword { color: #ff9fca; }
+.cm-s-byte .cm-def { color: var(--code); }
+.cm-s-byte .cm-variable { color: var(--ink); }
+.cm-s-byte .cm-variable-2, .cm-s-byte .cm-variable-3, .cm-s-byte .cm-type { color: #8fd3ff; }
+.cm-s-byte .cm-builtin { color: var(--code); }
+.cm-s-byte .cm-property { color: #b6c3ff; }
+.cm-s-byte .cm-string, .cm-s-byte .cm-string-2 { color: var(--good); }
+.cm-s-byte .cm-number, .cm-s-byte .cm-atom { color: #ffb08a; }
+.cm-s-byte .cm-comment { color: #7176a8; font-style: italic; }
+.cm-s-byte .cm-meta { color: #ff9fca; }
+.cm-s-byte .cm-operator { color: #d9d7f0; }
+.cm-s-byte .cm-tag { color: #f37148; }
+.cm-s-byte .cm-attribute { color: #ffd27a; }
+.cm-s-byte .cm-qualifier { color: var(--accent); }
+.cm-s-byte .cm-error { color: var(--danger); }
+.plain-editor { flex: 1; min-width: 0; resize: none; border: 0; outline: none; background: transparent; color: var(--ink); font: 13px/1.6 var(--f-code); padding: 12px; white-space: pre; tab-size: 4; min-height: 64px; }
+
 @media (max-width: 900px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
-  .play { display: flex; flex-direction: column; }
+  .play { display: flex; flex-direction: column; align-items: stretch; }
   .col { display: contents; }
   .lesson { order: 1; } .stage { order: 2; } .editor { order: 3; } .actions { order: 4; } .console { order: 5; }
   .ed-body { height: 240px; }
@@ -174,28 +258,32 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
 <div class="wrap">
   <header class="topbar">
     <button class="brand" id="homeBtn" aria-label="Back to level map"><span class="chip">&lt;/&gt;</span>USING CODING SKILLS IN GAMES</button>
-    <div class="progress"><span id="progText">0 / 14 levels</span><div class="bar"><i id="progBar"></i></div></div>
+    <div class="progress"><span id="progText">0 / 25 levels</span><div class="bar"><i id="progBar"></i></div></div>
   </header>
 
   <section id="mapScreen">
     <div class="hero">
       <div>
         <h1>Using Coding Skills <span>In Games</span></h1>
-        <p>Every level is solved by writing real code. Print answers to the console, build platforms with function calls, bend gravity with a variable, fix buggy loops and style the level with CSS, across seven languages.</p>
+        <p>Every level is solved by writing real code in a real code editor. Print answers to the console, build platforms with function calls, bend gravity with a variable, fix buggy loops and style the level with CSS, across seven languages.</p>
         <div class="mechanics">
-          <span class="mech">Console quests</span><span class="mech">Build platforms</span><span class="mech">Change physics</span><span class="mech">Fix the bug</span><span class="mech">Make a web page</span><span class="mech">Style the level</span>
+          <span class="mech">Console quests</span><span class="mech">Build platforms</span><span class="mech">Change physics</span><span class="mech">Write functions</span><span class="mech">Fix the bug</span><span class="mech">Make a web page</span><span class="mech">Style the level</span>
         </div>
-        <div class="cta"><button class="btn primary" id="continueBtn">Start level 1</button></div>
+        <div class="cta"><button class="btn primary" id="continueBtn">Start level 1 with Byte</button></div>
       </div>
-      <pre class="hero-term"><span class="c">// a staircase, built with a loop</span>
-<span class="k">for</span> (<span class="k">let</span> i = 0; i &lt; 5; i++) {
-  <span class="f">createPlatform</span>(120 + i * 80, 360 - i * 45, 70);
-}
-<span class="c"># same idea in Python</span>
-<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(5):
-    <span class="f">create_platform</span>(120 + i * 80, 360 - i * 45, 70)
-<span class="c">// and the console</span>
-<span class="f">printf</span>(<span class="s">"Score: %d\n"</span>, score);</pre>
+      <div class="hero-side">
+        <div class="tutor hero-tutor">
+          <div class="byte wave" aria-hidden="true"><i class="ant"></i><i class="head"><i class="visor"><i class="eye"></i></i></i><i class="feet"></i></div>
+          <div class="bubble"><div class="who">BYTE</div><div>Hi, I'm Byte! Before each level I'll teach you the idea and let you practice it. Then you write the code that gets me to the flag.</div></div>
+        </div>
+        <pre class="hero-term"><span class="c">// JavaScript: build a platform</span>
+<span class="f">createPlatform</span>(200, 350, 120);
+<span class="c"># Python: repeat with a loop</span>
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(3):
+    <span class="f">print</span>(<span class="s">"Level"</span>, i)
+<span class="c">/* CSS: hide something */</span>
+<span class="f">#wall</span> { display: none; }</pre>
+      </div>
     </div>
     <div id="levelList"></div>
   </section>
@@ -213,10 +301,34 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
     </div>
     <div class="play">
       <div class="col">
-        <div class="lesson" id="lesson"></div>
+        <div class="lesson" id="lesson">
+          <div class="tutor">
+            <div class="byte" id="byte" aria-hidden="true"><i class="ant"></i><i class="head"><i class="visor"><i class="eye"></i></i></i><i class="feet"></i></div>
+            <div class="bubble">
+              <div class="who">BYTE <span id="stepNum"></span></div>
+              <div id="say" aria-live="polite"></div>
+              <div class="try" id="tryBox" hidden>
+                <div id="tryCodeWrap" class="try-ed"><span class="pill" id="tryLang">JS</span><textarea id="tryCode" spellcheck="false" aria-label="Practice code"></textarea></div>
+                <input id="tryAnswer" type="text" inputmode="numeric" autocomplete="off" placeholder="Your answer" aria-label="Your answer" hidden>
+                <div class="try-row"><button class="btn primary sm" id="tryBtn">Run it</button><span id="tryFb" role="status"></span></div>
+                <pre id="tryOut" hidden></pre>
+              </div>
+            </div>
+          </div>
+          <div class="tnav" id="tnav" hidden>
+            <span class="dots" id="dots"></span>
+            <button class="btn ghost sm" id="tSkip">Skip lesson</button>
+            <button class="btn sm" id="tBack">Back</button>
+            <button class="btn primary sm" id="tNext">Next</button>
+          </div>
+          <div class="notes" id="notes" hidden>
+            <details><summary>Cheat sheet</summary><div id="cheat"></div></details>
+            <button class="btn ghost sm" id="replayTut">Replay Byte's lesson</button>
+          </div>
+        </div>
         <div class="editor">
           <div class="ed-head"><span class="pill" id="edLang">JS</span><span class="fname" id="fname">main.js</span><button class="btn" id="resetCode">Reset code</button></div>
-          <div class="ed-body"><pre class="gutter" id="gutter">1</pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code editor"></textarea></div>
+          <div class="ed-body"><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Code editor"></textarea></div>
         </div>
         <div class="actions">
           <button class="btn primary" id="runBtn">&#9654; Run code</button>
@@ -260,6 +372,18 @@ canvas#game { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; m
   </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/xml-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
 <script>
 (() => {
 'use strict';
@@ -277,15 +401,26 @@ const LANGS = {
 
 /* ---------------- Levels ---------------- */
 const LEVELS = [
+  /* ======================= JavaScript ======================= */
   {
     id: 'js-hello', lang: 'js', type: 'console', badge: 'Console quest', title: 'Hello, Console',
-    learn: String.raw`<p><code>console.log()</code> prints a message to the console. Text inside quotes is called a <em>string</em>. In JavaScript a statement usually ends with a semicolon.</p><pre><code>console.log("I am learning JavaScript");</code></pre>`,
+    learn: String.raw`<p><code>console.log()</code> prints to the console. Text in quotes is a <em>string</em>.</p><pre><code>console.log("I like games");</code></pre>`,
+    guide: [
+      { say: String.raw`Hi! I'm <b>Byte</b>, your coding buddy. In every level you solve the puzzle by writing real code. You type in the editor, press <b>Run</b>, and the console shows what your code prints.` },
+      { say: String.raw`In JavaScript, <code>console.log()</code> prints whatever you put inside the parentheses. Text needs quotes around it, like <code>"pizza"</code>. Text in quotes is called a <em>string</em>.` },
+      { say: String.raw`Your turn! Make the console print the word <b>pizza</b>.`,
+        try: { lang: 'js', starter: 'console.log()', check(src, h) {
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'pizza') return 'The console printed "' + norm(r.output) + '". Put "pizza" in quotes inside the parentheses.';
+        } } },
+      { say: String.raw`You got it! Now use the same idea to answer the quest on the right.` },
+    ],
     task: 'Print exactly <strong>Hello, World!</strong> to the console.',
     question: 'The game needs to greet the player. Print the greeting to the console.',
     expect: 'Hello, World!',
     starter: String.raw`// Write your JavaScript below
 `,
-    hint: 'Put the text in quotes inside the parentheses: console.log("...");',
+    hint: 'Same as pizza, but with the greeting: capital H, comma, capital W, exclamation mark.',
     solution: String.raw`console.log("Hello, World!");`,
     check(r, src) {
       if (!/console\s*\.\s*log/.test(src)) return 'Use console.log(...) to print the message.';
@@ -293,106 +428,316 @@ const LEVELS = [
     },
   },
   {
+    id: 'js-strings', lang: 'js', type: 'console', badge: 'Console quest', title: 'Name Tag',
+    learn: String.raw`<p><code>let</code> creates a variable. <code>+</code> joins strings together.</p><pre><code>let pet = "Rex";
+console.log("Good dog, " + pet);</code></pre>`,
+    guide: [
+      { say: String.raw`A <em>variable</em> is a named box that stores a value. <code>let pet = "Rex";</code> puts the string Rex into a box called <code>pet</code>.` },
+      { say: String.raw`The <code>+</code> sign glues strings together: <code>"Good " + "dog"</code> becomes <code>Good dog</code>. You can glue variables in too: <code>"Hi " + pet</code>.` },
+      { say: String.raw`Try it: using the <code>food</code> variable, print <b>I love taco</b>.`,
+        try: { lang: 'js', starter: 'let food = "taco";\n', check(src, h) {
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'I love taco') return 'The console printed "' + norm(r.output) + '". Glue "I love " and food together with +.';
+          if ((src.match(/\bfood\b/g) || []).length < 2) return 'It printed the right thing, but use the food variable instead of typing taco.';
+        } } },
+      { say: String.raw`Nice gluing! In this level the game will also test your code with a different hero name, so use the variable instead of typing the name yourself.` },
+    ],
+    task: 'Print <strong>Welcome, Nova!</strong> using the <strong>hero</strong> variable. The game also tests it with another name.',
+    question: 'A new hero joined. Greet them by name using the hero variable.',
+    expect: 'Welcome, Nova!',
+    starter: String.raw`let hero = "Nova";
+// print the greeting using the hero variable
+`,
+    hint: 'Glue three pieces: "Welcome, " then hero then "!". Watch the space after the comma.',
+    solution: String.raw`let hero = "Nova";
+console.log("Welcome, " + hero + "!");`,
+    check(r, src, ctx) {
+      if (!hasLine(r.output, 'Welcome, Nova!')) return 'The console should show exactly: Welcome, Nova!';
+      if (!/hero\s*=\s*"Nova"/.test(src)) return 'Keep the line let hero = "Nova"; so the game can test your code.';
+      const r2 = ctx.run(src.replace(/hero\s*=\s*"Nova"/, 'hero = "Zed"'));
+      if (r2.error || !hasLine(r2.output, 'Welcome, Zed!')) return 'When the game changed hero to "Zed", it did not print Welcome, Zed! Use the hero variable instead of typing Nova.';
+      ctx.log('Test: hero = "Zed" printed "Welcome, Zed!". Correct.', 'ok');
+    },
+  },
+  {
     id: 'js-platform', lang: 'js', type: 'platformer', badge: 'Build platforms', title: 'Mind the Gap',
-    learn: String.raw`<p>A <em>function call</em> runs a named piece of code. You pass it <em>arguments</em> inside the parentheses, separated by commas.</p><pre><code>createPlatform(x, y, width);</code></pre><p>Game screens count <code>y</code> downward: <code>y = 0</code> is the top and the ground is at <code>y = 400</code>. Hover over the game to read coordinates.</p>`,
+    learn: String.raw`<p>Call a function with its name and arguments in parentheses. <code>y</code> counts downward; the ground surface is <code>y = 400</code>.</p><pre><code>createPlatform(x, y, width);</code></pre>`,
+    guide: [
+      { say: String.raw`This is a platformer, and I'm the little robot in it! Move with the <b>arrow keys</b> or <b>A / D</b>, jump with <b>Space</b>. Walk right and you'll see the gap is too wide to jump.` },
+      { say: String.raw`A <em>function</em> is a command with a name. You call it with parentheses and give it values called <em>arguments</em>. This game has one that builds platforms: <code>createPlatform(x, y, width)</code>.` },
+      { say: String.raw`<code>x</code> goes left to right. <code>y</code> goes <b>down</b>: y = 0 is the top of the screen. The ground's surface is at y = 400. Hover over the game to read any spot's coordinates.` },
+      { say: String.raw`Quick check: you want a platform <b>50 pixels above</b> the ground. What y do you use?`,
+        try: { answer: true, check(v) { if (Number(v) !== 350) return Number(v) === 450 ? 'Close, but y grows downward. Above the ground means a smaller y.' : 'Not quite. Start from the ground (400) and remember that up means smaller y.'; } } },
+      { say: String.raw`Exactly: 400 - 50 = 350. Now hover over the game to find where the gap starts and ends, then build your bridge.` },
+    ],
     task: 'The gap is too wide to jump. Call <strong>createPlatform</strong> to build a bridge, press Run, then walk to the flag.',
     world: { ground: [[0, 250], [550, 800]], flag: [740, 400] },
     platforms: true,
-    starter: String.raw`// The gap between x = 250 and x = 550 is too wide to jump.
-// createPlatform(x, y, width) builds a platform.
-// Example: createPlatform(100, 300, 120);
+    starter: String.raw`// createPlatform(x, y, width) builds a platform.
 
 `,
-    hint: 'Start the platform at the edge of the gap (x = 250), put it on the ground line (y = 400) and make it 300 wide.',
+    hint: 'The gap starts at x = 250 and ends at x = 550. Put the platform on the ground line (y = 400).',
     solution: String.raw`createPlatform(250, 400, 300);`,
     require(r) { if (!r.platforms.length) return 'Call createPlatform(x, y, width) to build at least one platform.'; },
   },
   {
+    id: 'js-func', lang: 'js', type: 'platformer', badge: 'Write a function', title: 'Bridge Builder',
+    learn: String.raw`<p>Make your own function with <code>function</code>, a name, and parameters.</p><pre><code>function greet(name) {
+  console.log("Hi " + name);
+}
+greet("Ada");</code></pre>`,
+    guide: [
+      { say: String.raw`When you need the same code again and again, make your <b>own</b> function. <code>function cheer() { console.log("Go!"); }</code> creates it. <code>cheer();</code> runs it.` },
+      { say: String.raw`Functions can take <em>parameters</em>: <code>function hop(n) { ... }</code>. Inside the braces, <code>n</code> is whatever value you passed in when you called it.` },
+      { say: String.raw`Try it: write a function <code>shout(word)</code> that prints the word with <b>!</b> after it, then call <code>shout("hey")</code>.`,
+        try: { lang: 'js', starter: 'function shout(word) {\n  \n}\n', check(src, h) {
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (!/function\s+shout/.test(src)) return 'Keep the function named shout.';
+          if (norm(r.output) !== 'hey!') return 'The console printed "' + norm(r.output) + '". Inside the function print word + "!", then call shout("hey") below it.';
+        } } },
+      { say: String.raw`Awesome. This level has three gaps that are all the same size. Fill in the <code>bridge</code> function once, then call it once per gap.` },
+    ],
+    task: 'Finish the <strong>bridge(x)</strong> function, then call it for all three gaps.',
+    world: { ground: [[0, 100], [300, 340], [540, 580], [780, 800]], flag: [784, 400] },
+    platforms: true,
+    starter: String.raw`// Every gap is 200 pixels wide. The gaps start at x = 100, 340 and 580.
+function bridge(x) {
+  // build a 200-wide platform starting at x, on the ground line
+}
+
+bridge(100);
+`,
+    hint: 'Inside bridge, call createPlatform(x, 400, 200). Then call bridge(340) and bridge(580) too.',
+    solution: String.raw`function bridge(x) {
+  createPlatform(x, 400, 200);
+}
+
+bridge(100);
+bridge(340);
+bridge(580);`,
+    require(r, src) {
+      if (!/function\s+bridge\s*\(/.test(src)) return 'Keep the bridge function. This level is about writing functions.';
+      if (r.platforms.length < 3) return 'You built ' + r.platforms.length + ' platform(s). Call bridge once for each of the three gaps.';
+    },
+  },
+  {
     id: 'js-vars', lang: 'js', type: 'platformer', badge: 'Change physics', title: 'Super Jump',
-    learn: String.raw`<p>A <em>variable</em> is a named box that stores a value. In JavaScript you create one with <code>let</code>. The game reads your variables to set its physics.</p><pre><code>let score = 0;
-let playerName = "Ada";</code></pre>`,
-    task: 'The ledge is 180 pixels high but your jump only reaches about 100. Change <strong>jumpPower</strong>, run, and jump onto the ledge.',
+    learn: String.raw`<p>Change a variable and the game reads the new value when you press Run.</p><pre><code>let lives = 3;
+lives = 5;</code></pre>`,
+    guide: [
+      { say: String.raw`Games are full of numbers: speed, gravity, health. Changing one variable can change how the whole game feels.` },
+      { say: String.raw`Try jumping onto that ledge first. Your jump reaches about 100 pixels, but the ledge is 180 pixels tall.` },
+      { say: String.raw`Warm-up: make a variable <code>lives</code> that holds <b>3</b>, then print it.`,
+        try: { lang: 'js', starter: '', check(src, h) {
+          const r = h.run('js', src); if (r.error) return r.error;
+          if (!/\blives\b/.test(src)) return 'Name the variable lives.';
+          if (norm(r.output) !== '3') return 'Print the lives variable: console.log(lives);';
+        } } },
+      { say: String.raw`Now change <code>jumpPower</code> in the editor and press Run. Bigger means higher, but the game caps it at 20.` },
+    ],
+    task: 'Change <strong>jumpPower</strong> so you can reach the ledge, then reach the flag.',
     world: { ground: [[0, 800]], blocks: [{ x: 430, y: 220, w: 370, h: 180 }], flag: [740, 220] },
     platforms: false, lockMsg: 'createPlatform is locked in this level. Change the jumpPower variable instead.',
     vars: { jumpPower: { def: 11, min: 4, max: 20, phys: 'jump' } },
     starter: String.raw`// jumpPower sets how hard the player jumps.
-// The game reads this variable when you press Run.
 let jumpPower = 10;
 `,
-    hint: 'Bigger numbers jump higher. Anything from 16 to 20 clears the ledge.',
+    hint: 'Anything from 16 to 20 clears the ledge.',
     solution: String.raw`let jumpPower = 17;`,
     require(r) {
-      if (r.vars.jumpPower === undefined) return 'Create a variable named jumpPower, for example: let jumpPower = 17;';
+      if (r.vars.jumpPower === undefined) return 'Create a variable named jumpPower.';
       if (typeof r.vars.jumpPower !== 'number' || !isFinite(r.vars.jumpPower)) return 'jumpPower must be a number, without quotes.';
     },
   },
+
+  /* ======================= Python ======================= */
   {
     id: 'py-coins', lang: 'py', type: 'console', badge: 'Console quest', title: 'Count the Coins',
-    learn: String.raw`<p>Python creates a variable as soon as you assign it, with no <code>let</code> and no semicolons. <code>*</code> multiplies and <code>print()</code> writes to the console.</p><pre><code>lives = 3
+    learn: String.raw`<p>Python variables need no <code>let</code> and no semicolons.</p><pre><code>lives = 3
 print(lives * 2)</code></pre>`,
+    guide: [
+      { say: String.raw`Welcome to <b>Python</b>! It's famous for being easy to read. No semicolons and no <code>let</code>: just <code>name = value</code>.` },
+      { say: String.raw`Math works like a calculator: <code>+ - * /</code>. And <code>print()</code> shows things in the console.` },
+      { say: String.raw`Try it: make a variable <code>hp</code> equal to <b>50 + 25</b> and print it.`,
+        try: { lang: 'py', starter: '', check(src, h) {
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (!/\bhp\s*=/.test(src)) return 'Create the variable with hp = ...';
+          if (norm(r.output) !== '75') return 'Print hp so the console shows 75.';
+        } } },
+      { say: String.raw`Python does the math for you. Now count the treasure!` },
+    ],
     task: 'Store the total number of coins in a variable named <strong>coins</strong>, then print it.',
     question: 'A treasure chest holds 12 rows of 7 gold coins. How many coins are in the chest?',
     expect: '84',
     vars: ['coins'],
     starter: String.raw`# 12 rows of 7 coins each
-# Make a variable called coins and print it
 `,
-    hint: 'coins = 12 * 7 on one line, then print(coins) on the next.',
+    hint: 'Make coins equal 12 times 7, then print(coins).',
     solution: String.raw`coins = 12 * 7
 print(coins)`,
     check(r, src) {
       if (r.vars.coins === undefined) return 'Create a variable named coins.';
-      if (r.vars.coins !== 84) return 'coins holds ' + pyRepr(r.vars.coins, false) + '. Let Python do the math: coins = 12 * 7';
+      if (r.vars.coins !== 84) return 'coins holds ' + pyRepr(r.vars.coins, false) + '. Let Python do the math with *.';
       if (!/\bprint\s*\(/.test(src)) return 'Use print(...) to show the answer.';
       if (!hasLine(r.output, '84')) return 'Print the value of coins so the console shows 84.';
     },
   },
   {
-    id: 'py-stairs', lang: 'py', type: 'platformer', badge: 'Build with loops', title: 'Tower Stairs',
-    learn: String.raw`<p>A <code>for</code> loop repeats the indented lines under it. <code>range(5)</code> counts 0, 1, 2, 3, 4, so <code>i</code> changes every time round. Python uses <em>indentation</em> (4 spaces) to show what belongs to the loop.</p><pre><code>for i in range(3):
-    print("step", i)</code></pre>`,
-    task: 'Use a loop and <strong>create_platform(x, y, width)</strong> to build a staircase up to the top of the tower.',
-    world: { ground: [[0, 800]], blocks: [{ x: 520, y: 160, w: 280, h: 240 }], flag: [750, 160] },
-    platforms: true,
-    starter: String.raw`# The tower top is at y = 160. Your jump reaches about 100 pixels.
-# Each step should be further right (bigger x) and higher (smaller y).
-for i in range(5):
-    # replace pass with create_platform(x, y, width) using i
-    pass
+    id: 'py-ifs', lang: 'py', type: 'console', badge: 'Console quest', title: 'Grade the Run',
+    learn: String.raw`<p><code>if</code>, <code>elif</code> and <code>else</code> end with a colon; the code inside is indented.</p><pre><code>if hp &lt;= 0:
+    print("Game over")
+elif hp &lt; 10:
+    print("Low health")
+else:
+    print("OK")</code></pre>`,
+    guide: [
+      { say: String.raw`<code>if</code> lets your code make choices. The line ends with a <b>colon</b>, and the code inside is <b>indented 4 spaces</b> (press Tab).` },
+      { say: String.raw`<code>elif</code> means "else if": another check. <code>else</code> catches everything left over. Python checks them top to bottom and runs only the first one that's true.` },
+      { say: String.raw`Try it: print <b>Game over</b> if <code>hp</code> is 0 or less, otherwise print <b>Alive</b>.`,
+        try: { lang: 'py', starter: 'hp = 0\n', check(src, h) {
+          if (!/^\s*if\b/m.test(src)) return 'Use an if statement.';
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'Game over') return 'With hp = 0 it should print Game over.';
+          const r2 = h.run('py', src.replace(/hp\s*=\s*0/, 'hp = 5'));
+          if (r2.error || norm(r2.output) !== 'Alive') return 'With hp = 5 it should print Alive. Add an else.';
+        } } },
+      { say: String.raw`Great choices! The game will test your grader with other scores too, so check <code>score</code> instead of just printing B.` },
+    ],
+    task: 'Print <strong>A</strong> if score is 90 or more, <strong>B</strong> if 80 or more, otherwise <strong>C</strong>. The game tests other scores too.',
+    question: 'Grade this speedrun! The score is 87.',
+    expect: 'B',
+    starter: String.raw`score = 87
+# print A, B or C using if / elif / else
 `,
-    hint: 'Try create_platform(120 + i * 80, 360 - i * 45, 70). When i = 0 that is (120, 360); when i = 4 it is (440, 180).',
-    solution: String.raw`for i in range(5):
-    create_platform(120 + i * 80, 360 - i * 45, 70)`,
-    require(r, src) {
-      if (!/^\s*(for|while)\b/m.test(src)) return 'This level wants a loop. Use for i in range(...): to build the steps.';
-      if (r.platforms.length < 4) return 'Your loop built ' + r.platforms.length + ' platform(s). Build at least 4 steps.';
+    hint: 'Check the biggest first: if score >= 90, then elif score >= 80, then else.',
+    solution: String.raw`score = 87
+if score >= 90:
+    print("A")
+elif score >= 80:
+    print("B")
+else:
+    print("C")`,
+    check(r, src, ctx) {
+      if (!/^\s*if\b/m.test(src) || !/^\s*elif\b/m.test(src)) return 'Use if and elif (and else).';
+      if (norm(r.output) !== 'B') return 'With score = 87 the console should show only: B';
+      if (!/score\s*=\s*87/.test(src)) return 'Keep the line score = 87 so the game can test your code.';
+      for (const [s, want] of [[95, 'A'], [50, 'C']]) {
+        const r2 = ctx.run(src.replace(/score\s*=\s*87/, 'score = ' + s));
+        if (r2.error || norm(r2.output) !== want) return 'Test with score = ' + s + ' printed "' + norm(r2.output) + '" but should print ' + want + '.';
+      }
+      ctx.log('Tests: 95 printed A, 50 printed C. Correct.', 'ok');
     },
   },
   {
+    id: 'py-list', lang: 'py', type: 'console', badge: 'Console quest', title: 'Inventory Check',
+    learn: String.raw`<p>A list holds many values. <code>for x in list:</code> visits each one.</p><pre><code>colors = ["red", "blue"]
+for c in colors:
+    print(c)</code></pre>`,
+    guide: [
+      { say: String.raw`A <em>list</em> holds many values in order: <code>colors = ["red", "blue", "green"]</code>.` },
+      { say: String.raw`<code>for thing in colors:</code> runs the indented code once for every item, and <code>thing</code> becomes that item each time round.` },
+      { say: String.raw`Try it: print each number in <code>nums</code> <b>times 10</b>, one per line, using a loop.`,
+        try: { lang: 'py', starter: 'nums = [1, 2, 3]\n', check(src, h) {
+          if (!/^\s*for\b/m.test(src)) return 'Use a for loop.';
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (norm(r.output) !== '10\n20\n30') return 'Expected 10, 20, 30 on separate lines. You printed: ' + (norm(r.output) || 'nothing');
+        } } },
+      { say: String.raw`Loops save so much typing. Now list the hero's inventory.` },
+    ],
+    task: 'Print every item in <strong>items</strong> on its own line using a <strong>for</strong> loop.',
+    question: 'Open the backpack and list each item.',
+    expect: 'sword\nshield\npotion',
+    starter: String.raw`items = ["sword", "shield", "potion"]
+# print each item on its own line
+`,
+    hint: 'for item in items: then, indented on the next line, print(item).',
+    solution: String.raw`items = ["sword", "shield", "potion"]
+for item in items:
+    print(item)`,
+    check(r, src) {
+      if (!/^\s*for\b/m.test(src)) return 'Use a for loop instead of printing each item by hand.';
+      if (norm(r.output) !== 'sword\nshield\npotion') return 'Expected sword, shield and potion, each on its own line.';
+    },
+  },
+  {
+    id: 'py-stairs', lang: 'py', type: 'platformer', badge: 'Build with loops', title: 'Tower Stairs',
+    learn: String.raw`<code>range(n)</code> counts 0 up to n - 1. Use the loop variable in math.</p><pre><code>for i in range(3):
+    print(100 + i * 50)</code></pre>`,
+    guide: [
+      { say: String.raw`<code>range(4)</code> counts <b>0, 1, 2, 3</b>. In <code>for i in range(4):</code>, <code>i</code> takes each of those values in turn.` },
+      { say: String.raw`Use <code>i</code> in math to make every repeat different. <code>100 + i * 50</code> gives 100, 150, 200, 250.` },
+      { say: String.raw`Try it: print <b>0, 5, 10, 15</b> (one per line) using <code>range(4)</code> and multiplication.`,
+        try: { lang: 'py', starter: 'for i in range(4):\n    ', check(src, h) {
+          const r = h.run('py', src); if (r.error) return r.error;
+          if (norm(r.output) !== '0\n5\n10\n15') return 'Expected 0, 5, 10, 15. You printed: ' + (norm(r.output).replace(/\n/g, ', ') || 'nothing');
+        } } },
+      { say: String.raw`Now build a staircase up the tower. Each step goes further right (bigger x) and higher (<b>smaller</b> y). Your jump reaches about 100 pixels.` },
+    ],
+    task: 'Use a loop and <strong>create_platform(x, y, width)</strong> to build stairs up the tower (its top is y = 160).',
+    world: { ground: [[0, 800]], blocks: [{ x: 520, y: 160, w: 280, h: 240 }], flag: [750, 160] },
+    platforms: true,
+    starter: String.raw`for i in range(5):
+    # replace pass with create_platform(x, y, width) using i
+    pass
+`,
+    hint: 'Try x = 120 + i * 80 and y = 360 - i * 45 with width 70.',
+    solution: String.raw`for i in range(5):
+    create_platform(120 + i * 80, 360 - i * 45, 70)`,
+    require(r, src) {
+      if (!/^\s*(for|while)\b/m.test(src)) return 'This level wants a loop.';
+      if (r.platforms.length < 4) return 'Your loop built ' + r.platforms.length + ' platform(s). Build at least 4 steps.';
+    },
+  },
+
+  /* ======================= HTML ======================= */
+  {
     id: 'html-divs', lang: 'html', type: 'platformer', badge: 'Build with tags', title: 'Div Bridges',
-    learn: String.raw`<p>HTML is made of <em>tags</em>. Most come in pairs: an opening <code>&lt;div&gt;</code> and a closing <code>&lt;/div&gt;</code>. <em>Attributes</em> go inside the opening tag. Here, every <code>div</code> with <code>class="platform"</code> becomes a platform, and its <code>style</code> sets the position.</p><pre><code>&lt;div class="platform" style="left: 100px; top: 300px; width: 120px"&gt;&lt;/div&gt;</code></pre>`,
+    learn: String.raw`<p>Tags open and close: <code>&lt;div&gt;&lt;/div&gt;</code>. Attributes go in the opening tag.</p><pre><code>&lt;div class="box" style="left: 10px"&gt;&lt;/div&gt;</code></pre>`,
+    guide: [
+      { say: String.raw`<b>HTML</b> builds web pages out of <em>tags</em>, like <code>&lt;p&gt;Hi&lt;/p&gt;</code>: an opening tag, the content, then a closing tag with a slash.` },
+      { say: String.raw`<em>Attributes</em> add info inside the opening tag, like <code>class="..."</code> and <code>style="..."</code>. In this game, every <code>div</code> with class <b>platform</b> turns into a real platform. Its style sets <code>left</code> (x), <code>top</code> (y) and <code>width</code>.` },
+      { say: String.raw`Try it: write a <code>div</code> with class <b>platform</b> whose style sets <b>left: 50px</b>.`,
+        try: { lang: 'html', starter: '', check(src) {
+          const d = new DOMParser().parseFromString(src, 'text/html');
+          const el = d.querySelector('div.platform');
+          if (!el) return 'Write <div class="platform"></div> first.';
+          if (px(parseStyleAttr(el.getAttribute('style')).left) !== 50) return 'Add style="left: 50px" inside the opening tag.';
+          if (!/<\/div>/i.test(src)) return 'Close the div with </div>.';
+        } } },
+      { say: String.raw`Perfect tag! One platform in the editor is floating way too high. Fix it, then add a second one for the other gap.` },
+    ],
     task: 'There are two gaps. Fix the first div (it floats far too high) and add a second one.',
     world: { ground: [[0, 180], [380, 460], [660, 800]], flag: [760, 400] },
     platforms: true,
-    starter: String.raw`<!-- Each div with class="platform" becomes a platform -->
-<!-- left = x, top = y, width = size (all in px) -->
-<!-- Gaps: from x 180 to 380, and from x 460 to 660 -->
+    starter: String.raw`<!-- Gaps: from x 180 to 380, and from x 460 to 660 -->
 <div class="platform" style="left: 180px; top: 120px; width: 200px"></div>
 `,
-    hint: 'The ground is at top: 400px. Change the first div to top: 400px, then copy it with left: 460px.',
+    hint: 'The ground is at top: 400px. Then copy the div and change left to 460px.',
     solution: String.raw`<div class="platform" style="left: 180px; top: 400px; width: 200px"></div>
 <div class="platform" style="left: 460px; top: 400px; width: 200px"></div>`,
     require(r) { if (r.platforms.length < 2) return 'Make two divs with class="platform", one for each gap.'; },
   },
   {
     id: 'html-page', lang: 'html', type: 'web', badge: 'Make a web page', title: 'Title Screen',
-    learn: String.raw`<p>Web pages use tags for each kind of content: <code>&lt;h1&gt;</code> is the biggest heading, <code>&lt;p&gt;</code> is a paragraph and <code>&lt;button&gt;</code> is a clickable button. You can add a <code>&lt;style&gt;</code> tag to color things.</p><pre><code>&lt;h1&gt;My Game&lt;/h1&gt;
-&lt;p&gt;Collect every star.&lt;/p&gt;</code></pre>`,
-    task: 'Build a title screen with an <strong>h1</strong> that says <strong>Code Quest</strong>, a <strong>p</strong> paragraph describing the game, and a <strong>button</strong> that says <strong>Start</strong>.',
+    learn: String.raw`<code>&lt;h1&gt;</code> is the biggest heading, <code>&lt;p&gt;</code> a paragraph, <code>&lt;button&gt;</code> a button.</p><pre><code>&lt;h2&gt;Options&lt;/h2&gt;
+&lt;p&gt;Pick a difficulty.&lt;/p&gt;</code></pre>`,
+    guide: [
+      { say: String.raw`<code>&lt;h1&gt;</code> to <code>&lt;h6&gt;</code> are headings; h1 is the biggest. <code>&lt;p&gt;</code> is a paragraph of text.` },
+      { say: String.raw`<code>&lt;button&gt;</code> makes a button, and the text between its tags shows on it. You can also add a <code>&lt;style&gt;</code> tag to color things.` },
+      { say: String.raw`Try it: make an <code>h2</code> heading that says <b>Hello</b>.`,
+        try: { lang: 'html', starter: '', check(src) {
+          const d = new DOMParser().parseFromString(src, 'text/html');
+          const el = d.querySelector('h2');
+          if (!el) return 'Use the h2 tag: <h2>...</h2>';
+          if (el.textContent.trim() !== 'Hello') return 'Put the word Hello between the tags.';
+        } } },
+      { say: String.raw`Looking good! Now build a title screen for your game. Watch it appear in the browser preview.` },
+    ],
+    task: 'Build a title screen: an <strong>h1</strong> saying <strong>Code Quest</strong>, a <strong>p</strong> paragraph, and a <strong>button</strong> saying <strong>Start</strong>.',
     starter: String.raw`<!-- Build the title screen for your game -->
 <h1>My Game</h1>
 `,
-    hint: 'Change the h1 text to Code Quest, then add <p>...</p> and <button>Start</button> under it.',
+    hint: 'Change the h1 text, then add a <p> and a <button> under it.',
     solution: String.raw`<style>
   body { font-family: sans-serif; text-align: center; padding: 20px; }
   button { font-size: 18px; padding: 8px 24px; }
@@ -413,10 +758,61 @@ for i in range(5):
     },
   },
   {
+    id: 'html-list', lang: 'html', type: 'web', badge: 'Make a web page', title: 'Inventory Screen',
+    learn: String.raw`<code>&lt;ul&gt;</code> is a bulleted list; each item is an <code>&lt;li&gt;</code> nested inside.</p><pre><code>&lt;ul&gt;
+  &lt;li&gt;milk&lt;/li&gt;
+&lt;/ul&gt;</code></pre>`,
+    guide: [
+      { say: String.raw`<code>&lt;ul&gt;</code> makes a bulleted list. Each item goes in its own <code>&lt;li&gt;</code> (list item) tag.` },
+      { say: String.raw`Tags can go <b>inside</b> other tags. That's called <em>nesting</em>: the <code>li</code> tags sit between <code>&lt;ul&gt;</code> and <code>&lt;/ul&gt;</code>. Indenting them makes it easier to read.` },
+      { say: String.raw`Try it: make a <code>ul</code> with two items, <b>apple</b> and <b>pear</b>.`,
+        try: { lang: 'html', starter: '', check(src) {
+          const d = new DOMParser().parseFromString(src, 'text/html');
+          const items = [...d.querySelectorAll('ul > li')].map((li) => li.textContent.trim().toLowerCase());
+          if (!d.querySelector('ul')) return 'Start with <ul> and </ul>.';
+          if (items.join(',') !== 'apple,pear') return 'Put <li>apple</li> and <li>pear</li> inside the ul.';
+        } } },
+      { say: String.raw`Now build the hero's inventory screen.` },
+    ],
+    task: 'Make an <strong>h2</strong> saying <strong>Inventory</strong> and a <strong>ul</strong> list with at least <strong>3</strong> items.',
+    starter: String.raw`<!-- Inventory screen -->
+`,
+    hint: 'An h2 with Inventory, then <ul> with three <li> lines inside, then </ul>.',
+    solution: String.raw`<h2>Inventory</h2>
+<ul>
+  <li>Sword</li>
+  <li>Shield</li>
+  <li>Potion</li>
+</ul>`,
+    check(r) {
+      const d = r.doc;
+      const h2 = d.querySelector('h2');
+      if (!h2 || h2.textContent.trim().toLowerCase() !== 'inventory') return 'Add <h2>Inventory</h2>.';
+      if (!d.querySelector('ul')) return 'Add a <ul> list.';
+      const n = [...d.querySelectorAll('ul > li')].filter((li) => li.textContent.trim()).length;
+      if (n < 3) return 'Your list has ' + n + ' item(s). Add at least 3 <li> items inside the ul.';
+    },
+  },
+
+  /* ======================= CSS ======================= */
+  {
     id: 'css-door', lang: 'css', type: 'platformer', badge: 'Style the level', title: 'Locked Door',
-    learn: String.raw`<p>CSS picks elements with a <em>selector</em> and changes them with <em>property: value;</em> pairs inside braces. <code>#name</code> selects by id, <code>.name</code> selects by class.</p><pre><code>#door { display: none; }
-.bridge { width: 300px; }</code></pre><p>This level is built from elements named <code>#door</code> and <code>.bridge</code>.</p>`,
-    task: 'Hide the <strong>#door</strong> and make the <strong>.bridge</strong> wide enough to cross, then reach the flag.',
+    learn: String.raw`<p>A rule is <code>selector { property: value; }</code>. <code>#</code> picks an id, <code>.</code> picks a class.</p><pre><code>#chest { color: gold; }
+.ladder { height: 50px; }</code></pre>`,
+    guide: [
+      { say: String.raw`<b>CSS</b> changes how HTML looks. A rule looks like <code>selector { property: value; }</code>.` },
+      { say: String.raw`The <em>selector</em> picks what to change. <code>#chest</code> picks the one element with id chest. <code>.coin</code> picks every element with class coin.` },
+      { say: String.raw`Some useful properties: <code>width</code> sets how wide something is (in px), and <code>display</code> controls whether it shows up at all. Setting display to <code>none</code> removes it completely.` },
+      { say: String.raw`Try it: write a rule that makes <code>.coin</code> <b>40px</b> wide.`,
+        try: { lang: 'css', starter: '', check(src) {
+          let rules; try { rules = parseCSS(src); } catch (e) { return e.message; }
+          const r = rules.find((x) => x.selectors.includes('.coin'));
+          if (!r) return 'Start the rule with the selector .coin';
+          if (px(r.decls.width) !== 40) return 'Inside the braces write width: 40px;';
+        } } },
+      { say: String.raw`Now look at the level. Which element is blocking you, and which one is too short?` },
+    ],
+    task: 'Get rid of <strong>#door</strong> and make <strong>.bridge</strong> wide enough to cross, then reach the flag.',
     world: {
       ground: [[0, 520], [760, 800]], flag: [772, 400],
       blocks: [
@@ -425,8 +821,7 @@ for i in range(5):
       ],
     },
     platforms: false,
-    starter: String.raw`/* #door blocks the path. .bridge is too short to cross the pit. */
-#door {
+    starter: String.raw`#door {
   display: block;
 }
 
@@ -434,7 +829,7 @@ for i in range(5):
   width: 60px;
 }
 `,
-    hint: 'Set display: none; on #door. The pit is 240px wide, so give .bridge a width of 240px.',
+    hint: 'Give #door a display value that removes it. The pit is 240px wide.',
     solution: String.raw`#door {
   display: none;
 }
@@ -444,9 +839,56 @@ for i in range(5):
 }`,
   },
   {
+    id: 'css-lift', lang: 'css', type: 'platformer', badge: 'Style the level', title: 'Stuck Lift',
+    learn: String.raw`<code>top</code> and <code>left</code> move an element. Bigger top means further down.</p><pre><code>#cloud { top: 80px; left: 300px; }</code></pre>`,
+    guide: [
+      { say: String.raw`CSS can also move things. <code>left</code> sets how far from the left edge, and <code>top</code> sets how far from the top. A bigger top means further <b>down</b>.` },
+      { say: String.raw`See the <code>#lift</code> up near the ceiling? You can't reach it there. Your jump reaches about 95 pixels.` },
+      { say: String.raw`Try it: write a rule that moves <code>#box</code> to <b>top: 200px</b>.`,
+        try: { lang: 'css', starter: '', check(src) {
+          let rules; try { rules = parseCSS(src); } catch (e) { return e.message; }
+          const r = rules.find((x) => x.selectors.includes('#box'));
+          if (!r) return 'Use the selector #box';
+          if (px(r.decls.top) !== 200) return 'Inside the braces write top: 200px;';
+        } } },
+      { say: String.raw`Now move the lift so it becomes a stepping stone between the ground (y 400) and the ledge (y 250).` },
+    ],
+    task: 'Move <strong>#lift</strong> with <strong>top</strong> so you can hop from the ground to the lift to the ledge.',
+    world: {
+      ground: [[0, 800]], flag: [760, 250],
+      blocks: [
+        { x: 520, y: 250, w: 280, h: 150 },
+        { x: 380, y: 100, w: 110, h: 16, id: 'lift', kind: 'bridge', name: '#lift' },
+      ],
+    },
+    platforms: false,
+    starter: String.raw`/* #lift is stuck near the ceiling */
+#lift {
+  top: 100px;
+}
+`,
+    hint: 'Halfway between 400 and 250 is a good spot. Try a top between 310px and 340px.',
+    solution: String.raw`#lift {
+  top: 325px;
+}`,
+  },
+
+  /* ======================= C ======================= */
+  {
     id: 'c-printf', lang: 'c', type: 'console', badge: 'Console quest', title: 'Score Board',
-    learn: String.raw`<p>C programs start in <code>main()</code>. <code>printf</code> prints formatted text: <code>%d</code> is a placeholder that gets replaced by a whole number, and <code>\n</code> starts a new line. Every statement ends with <code>;</code>.</p><pre><code>int lives = 3;
-printf("Lives: %d\n", lives);</code></pre>`,
+    learn: String.raw`<code>%d</code> is a slot for a whole number. <code>\n</code> ends the line.</p><pre><code>int coins = 9;
+printf("Coins: %d\n", coins);</code></pre>`,
+    guide: [
+      { say: String.raw`<b>C</b> is one of the oldest popular languages, and lots of game engines started with it. The program runs from <code>main()</code>, and every statement ends with a <code>;</code>.` },
+      { say: String.raw`<code>printf</code> prints text. <code>%d</code> is a slot for a whole number; the number goes after the comma. <code>\n</code> means "new line".` },
+      { say: String.raw`Try it: print <b>Lives: 3</b> using <code>%d</code> and the <code>lives</code> variable.`,
+        try: { lang: 'c', starter: 'int lives = 3;\n', check(src, h) {
+          if (!/%d/.test(src)) return 'Use the %d slot in your printf.';
+          const r = h.run('c', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'Lives: 3') return 'The console printed "' + norm(r.output) + '". Expected Lives: 3';
+        } } },
+      { say: String.raw`Great formatting! Now fix the blank scoreboard.` },
+    ],
     task: 'Print <strong>Score: 100</strong> using printf with <strong>%d</strong> and the score variable.',
     question: 'The scoreboard is blank. Print the player\'s score using the score variable.',
     expect: 'Score: 100',
@@ -454,12 +896,12 @@ printf("Lives: %d\n", lives);</code></pre>`,
 
 int main() {
     int score = 100;
-    // print "Score: 100" using printf and %d
+    // print the score here
 
     return 0;
 }
 `,
-    hint: 'printf("Score: %d\n", score);',
+    hint: 'Just like Lives, but with Score and the score variable.',
     solution: String.raw`#include <stdio.h>
 
 int main() {
@@ -474,15 +916,112 @@ int main() {
     },
   },
   {
-    id: 'c-bridge', lang: 'c', type: 'platformer', badge: 'Build with loops', title: 'Spike Pit',
-    learn: String.raw`<p>A C <code>for</code> loop has three parts: start, condition and step. This one runs while <code>i &lt; 4</code>, so <code>i</code> is 0, 1, 2, 3.</p><pre><code>for (int i = 0; i &lt; 4; i++) {
-    // repeated code
+    id: 'c-math', lang: 'c', type: 'console', badge: 'Console quest', title: 'Share the Gems',
+    learn: String.raw`<p>Whole-number division drops the decimals. <code>%</code> gives the remainder.</p><pre><code>printf("%d\n", 9 / 4);  // 2
+printf("%d\n", 9 % 4);  // 1</code></pre>`,
+    guide: [
+      { say: String.raw`When you divide whole numbers (<code>int</code>) in C, the decimal part is thrown away. <code>7 / 2</code> is <b>3</b>, not 3.5.` },
+      { say: String.raw`The <code>%</code> operator (called <em>modulo</em>) gives the <b>remainder</b>. <code>7 % 2</code> is 1, because 7 = 2 × 3 + 1. Games use it for things like "every 3rd turn".` },
+      { say: String.raw`Try it: print the remainder of <b>10 divided by 3</b> using printf, %d and the <code>%</code> operator.`,
+        try: { lang: 'c', starter: '', check(src, h) {
+          if (!/10\s*%\s*3/.test(src)) return 'Use 10 % 3 in your code.';
+          const r = h.run('c', src); if (r.error) return r.error;
+          if (norm(r.output) !== '1') return 'The console printed "' + norm(r.output) + '". It should print 1.';
+        } } },
+      { say: String.raw`Nice! Now share the gems fairly and keep the leftovers.` },
+    ],
+    task: 'Print <strong>Each: 3</strong> and <strong>Left: 2</strong> using <strong>/</strong> and <strong>%</strong> with the variables.',
+    question: '17 gems are shared equally among 5 friends. How many does each friend get, and how many are left over?',
+    expect: 'Each: 3\nLeft: 2',
+    starter: String.raw`#include <stdio.h>
+
+int main() {
+    int gems = 17;
+    int friends = 5;
+    // print each friend's share, then the leftover gems
+
+    return 0;
+}
+`,
+    hint: 'gems / friends is the share and gems % friends is the leftover. Print each with its own printf and %d.',
+    solution: String.raw`#include <stdio.h>
+
+int main() {
+    int gems = 17;
+    int friends = 5;
+    printf("Each: %d\n", gems / friends);
+    printf("Left: %d\n", gems % friends);
+    return 0;
+}`,
+    check(r, src) {
+      if (!/gems\s*\/\s*friends/.test(src)) return 'Calculate the share with gems / friends.';
+      if (!/gems\s*%\s*friends/.test(src)) return 'Calculate the leftover with gems % friends.';
+      if (norm(r.output) !== 'Each: 3\nLeft: 2') return 'Expected two lines: Each: 3 and Left: 2';
+    },
+  },
+  {
+    id: 'c-while', lang: 'c', type: 'console', badge: 'Console quest', title: 'Launch Countdown',
+    learn: String.raw`<code>while</code> repeats while its condition is true. Change something inside so it stops.</p><pre><code>int n = 0;
+while (n &lt; 2) {
+    n++;
 }</code></pre>`,
-    task: 'The loop builds a bridge of blocks, but it stops too early. Change the loop so the bridge reaches the far side.',
+    guide: [
+      { say: String.raw`A <code>while</code> loop repeats its code over and over <b>as long as</b> its condition is true.` },
+      { say: String.raw`Careful: something inside must change, or the loop never ends! <code>n++</code> adds 1 to n and <code>n--</code> subtracts 1.` },
+      { say: String.raw`Try it: use a while loop to print <b>1, 2, 3</b>, one per line.`,
+        try: { lang: 'c', starter: 'int n = 1;\n', check(src, h) {
+          if (!/\bwhile\s*\(/.test(src)) return 'Use a while loop.';
+          const r = h.run('c', src); if (r.error) return r.error;
+          if (norm(r.output) !== '1\n2\n3') return 'Expected 1, 2, 3 on separate lines. You printed: ' + (norm(r.output).replace(/\n/g, ', ') || 'nothing');
+        } } },
+      { say: String.raw`Loop mastered. Now count the rocket down!` },
+    ],
+    task: 'Use a <strong>while</strong> loop to print <strong>3, 2, 1</strong>, then <strong>GO!</strong>',
+    question: 'The rocket is ready. Count down from 3, then launch!',
+    expect: '3\n2\n1\nGO!',
+    starter: String.raw`#include <stdio.h>
+
+int main() {
+    int count = 3;
+    // while loop here
+
+    printf("GO!\n");
+    return 0;
+}
+`,
+    hint: 'while (count > 0) { print count, then count--; }',
+    solution: String.raw`#include <stdio.h>
+
+int main() {
+    int count = 3;
+    while (count > 0) {
+        printf("%d\n", count);
+        count--;
+    }
+    printf("GO!\n");
+    return 0;
+}`,
+    check(r, src) {
+      if (!/\bwhile\s*\(/.test(src)) return 'Use a while loop.';
+      if (norm(r.output) !== '3\n2\n1\nGO!') return 'Expected 3, 2, 1 and GO! on separate lines.';
+    },
+  },
+  {
+    id: 'c-bridge', lang: 'c', type: 'platformer', badge: 'Build with loops', title: 'Spike Pit',
+    learn: String.raw`<code>for (start; condition; step)</code> packs a loop into one line.</p><pre><code>for (int i = 0; i &lt; 3; i++) {
+    printf("%d\n", i);
+}</code></pre>`,
+    guide: [
+      { say: String.raw`A <code>for</code> loop packs three parts into one line: <code>for (start; condition; step)</code>.` },
+      { say: String.raw`<code>int i = 0</code> starts the counter, <code>i &lt; 3</code> keeps going while it's true, and <code>i++</code> adds 1 after each round.` },
+      { say: String.raw`Quick check: how many times does <code>for (int i = 0; i &lt; 4; i++)</code> run?`,
+        try: { answer: true, check(v) { if (Number(v) !== 4) return 'Count them: i is 0, then 1, 2, 3, and stops when i reaches 4.'; } } },
+      { say: String.raw`Right: 0, 1, 2, 3. The bridge loop in the editor stops too early. Work out how many blocks you need.` },
+    ],
+    task: 'The loop builds a bridge, but it stops too early. Change the loop so the bridge reaches the far side.',
     world: { ground: [[0, 150], [700, 800]], spikes: [[150, 550]], flag: [760, 400] },
     platforms: true,
-    starter: String.raw`// Build a bridge of blocks across the spike pit.
-// The pit runs from x = 150 to x = 700.
+    starter: String.raw`// The pit runs from x = 150 to x = 700.
 int main() {
     for (int i = 0; i < 3; i++) {
         createPlatform(150 + i * 90, 400, 80);
@@ -490,7 +1029,7 @@ int main() {
     return 0;
 }
 `,
-    hint: 'Each block is 90 pixels further along. The pit is 550 wide, so you need about 6 or 7 blocks: try i < 7.',
+    hint: 'Each block is 90 pixels further along and the pit is 550 wide.',
     solution: String.raw`int main() {
     for (int i = 0; i < 7; i++) {
         createPlatform(150 + i * 90, 400, 80);
@@ -499,13 +1038,26 @@ int main() {
 }`,
     require(r, src) {
       if (!/\b(for|while)\s*\(/.test(src)) return 'Keep the for loop. This level is about loops.';
-      if (r.platforms.length < 6) return 'Your loop built ' + r.platforms.length + ' block(s). The bridge needs at least 6.';
+      if (r.platforms.length < 6) return 'Your loop built ' + r.platforms.length + ' block(s). The bridge needs more.';
     },
   },
+
+  /* ======================= C++ ======================= */
   {
     id: 'cpp-bug', lang: 'cpp', type: 'console', badge: 'Fix the bug', title: 'Off by One',
-    learn: String.raw`<p>C++ prints with <code>cout</code> and the <code>&lt;&lt;</code> operator. <code>endl</code> ends the line. A very common bug is the <em>off-by-one</em> error: a loop that runs one time too few or too many.</p><pre><code>cout &lt;&lt; "HP: " &lt;&lt; hp &lt;&lt; endl;</code></pre>`,
-    task: 'The countdown should print the numbers <strong>1 to 5</strong>, one per line. It only prints 1 to 4. Find and fix the bug.',
+    learn: String.raw`<code>cout &lt;&lt;</code> prints; <code>endl</code> ends the line.</p><pre><code>cout &lt;&lt; "HP: " &lt;&lt; hp &lt;&lt; endl;</code></pre>`,
+    guide: [
+      { say: String.raw`<b>C++</b> is C with superpowers. Unreal Engine and most big console games are written in it. It prints with <code>cout &lt;&lt;</code> and ends lines with <code>endl</code>.` },
+      { say: String.raw`Comparisons: <code>&lt;</code> means "less than" and <code>&lt;=</code> means "less than <b>or equal</b>". Mixing them up causes a famous bug called <em>off-by-one</em>.` },
+      { say: String.raw`Try it: print <b>Ready</b> with cout and end the line with endl.`,
+        try: { lang: 'cpp', starter: '', check(src, h) {
+          if (!/cout/.test(src)) return 'Use cout << ...';
+          const r = h.run('cpp', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'Ready') return 'The console printed "' + norm(r.output) + '". Expected Ready';
+        } } },
+      { say: String.raw`Now run the countdown in the editor and see which number is missing. Then hunt down the bug!` },
+    ],
+    task: 'The countdown should print <strong>1 to 5</strong>, one per line. Find and fix the bug.',
     question: 'The launch countdown is broken. It must print 1, 2, 3, 4, 5, each on its own line.',
     expect: '1\n2\n3\n4\n5',
     starter: String.raw`#include <iostream>
@@ -519,7 +1071,7 @@ int main() {
     return 0;
 }
 `,
-    hint: 'The loop stops when i < 5 is false, so 5 is never printed. Use i <= 5.',
+    hint: 'Look at the loop condition. When i is 5, is i < 5 true?',
     solution: String.raw`#include <iostream>
 using namespace std;
 
@@ -535,44 +1087,139 @@ int main() {
     },
   },
   {
-    id: 'cpp-gravity', lang: 'cpp', type: 'platformer', badge: 'Change physics', title: 'Moon Gravity',
-    learn: String.raw`<p>C++ variables have a <em>type</em>. <code>int</code> holds whole numbers and <code>double</code> holds decimals like <code>0.5</code>. Game engines run physics every frame: gravity is added to your falling speed 60 times a second.</p><pre><code>int lives = 3;
-double speed = 2.5;</code></pre>`,
-    task: 'The canyon is 360 pixels wide, but you can only jump about 150. Lower <strong>gravity</strong> so you float across.',
-    world: { ground: [[0, 200], [560, 800]], flag: [740, 400], spikes: [[200, 360]] },
-    platforms: false, lockMsg: 'createPlatform is locked in this level. Change gravity instead.',
-    vars: { gravity: { def: 0.6, min: 0.12, max: 1.5, phys: 'g' } },
-    starter: String.raw`// Earth gravity is too strong to cross the canyon.
-// The game reads this variable when you press Run.
-double gravity = 0.6;
+    id: 'cpp-func', lang: 'cpp', type: 'console', badge: 'Write a function', title: 'Double Points',
+    learn: String.raw`<p>A C++ function names its return type. <code>return</code> sends a value back.</p><pre><code>int add(int a, int b) {
+    return a + b;
+}</code></pre>`,
+    guide: [
+      { say: String.raw`In C++, a function says what type of value it gives back. <code>int add(int a, int b)</code> takes two ints and returns an int.` },
+      { say: String.raw`<code>return</code> sends a value back to whoever called the function. So <code>cout &lt;&lt; add(2, 3);</code> prints 5.` },
+      { say: String.raw`Try it: finish <code>triple</code> so it returns <b>n times 3</b>. The code prints triple(5).`,
+        try: { lang: 'cpp', starter: 'int triple(int n) {\n    \n}\n\ncout << triple(5) << endl;\n', check(src, h) {
+          if (!/\breturn\b/.test(src)) return 'Use return inside the function.';
+          const r = h.run('cpp', src); if (r.error) return r.error;
+          if (norm(r.output) !== '15') return 'triple(5) printed "' + norm(r.output) + '". It should be 15.';
+        } } },
+      { say: String.raw`You wrote a real function! Now power up the score doubler.` },
+    ],
+    task: 'Finish <strong>doubleScore</strong> so it returns the score times 2. The game prints doubleScore(21).',
+    question: 'The power-up should double your score. doubleScore(21) must print 42.',
+    expect: '42',
+    starter: String.raw`#include <iostream>
+using namespace std;
+
+int doubleScore(int s) {
+    // finish this function
+}
+
+int main() {
+    cout << doubleScore(21) << endl;
+    return 0;
+}
 `,
-    hint: 'Smaller gravity means longer jumps. Try 0.2, then take a running jump from the edge.',
-    solution: String.raw`double gravity = 0.2;`,
-    require(r) {
-      if (r.vars.gravity === undefined) return 'Create a variable named gravity, for example: double gravity = 0.2;';
-      if (typeof r.vars.gravity !== 'number' || !isFinite(r.vars.gravity)) return 'gravity must be a number.';
+    hint: 'One line inside the function: return the parameter s multiplied by 2.',
+    solution: String.raw`#include <iostream>
+using namespace std;
+
+int doubleScore(int s) {
+    return s * 2;
+}
+
+int main() {
+    cout << doubleScore(21) << endl;
+    return 0;
+}`,
+    check(r, src) {
+      if (!/\breturn\b[^;]*\bs\b/.test(src)) return 'Return a value that uses the parameter s.';
+      if (norm(r.output) !== '42') return 'doubleScore(21) printed "' + norm(r.output) + '" instead of 42.';
     },
   },
   {
+    id: 'cpp-speed', lang: 'cpp', type: 'platformer', badge: 'Change physics', title: 'Turbo Boots',
+    learn: String.raw`<p>Physics variables are just numbers the game reads every frame.</p><pre><code>int speed = 4;  // pixels per frame</code></pre>`,
+    guide: [
+      { say: String.raw`<code>speed</code> is how many pixels I move each frame, and the game runs 60 frames every second.` },
+      { say: String.raw`A jump keeps me in the air for about <b>37 frames</b>. So the distance I jump is about <b>37 × speed</b>.` },
+      { say: String.raw`Quick math: if speed is 5, about how many pixels do I jump?`,
+        try: { answer: true, check(v) { const n = Number(v); if (!(n >= 180 && n <= 190)) return 'Multiply 37 by 5.'; } } },
+      { say: String.raw`Correct, about 185. The pit here is 230 pixels wide. Pick a speed that clears it (the game allows up to 9).` },
+    ],
+    task: 'The spike pit is 230 pixels wide. Raise <strong>speed</strong> so you can jump across.',
+    world: { ground: [[0, 250], [480, 800]], spikes: [[250, 230]], flag: [740, 400] },
+    platforms: false, lockMsg: 'createPlatform is locked in this level. Change speed instead.',
+    vars: { speed: { def: 4, min: 2, max: 9, phys: 'speed' } },
+    starter: String.raw`// Pixels moved per frame
+int speed = 4;
+`,
+    hint: '230 / 37 is about 6.2, so you need a speed of at least 7. Jump from the edge.',
+    solution: String.raw`int speed = 8;`,
+    require(r) {
+      if (r.vars.speed === undefined) return 'Create a variable named speed.';
+      if (typeof r.vars.speed !== 'number' || !isFinite(r.vars.speed)) return 'speed must be a number.';
+    },
+  },
+  {
+    id: 'cpp-gravity', lang: 'cpp', type: 'platformer', badge: 'Change physics', title: 'Moon Gravity',
+    learn: String.raw`<code>double</code> holds decimals.</p><pre><code>double friction = 0.8;</code></pre>`,
+    guide: [
+      { say: String.raw`<code>int</code> holds whole numbers. <code>double</code> holds decimals like <code>0.5</code>.` },
+      { say: String.raw`Gravity pulls me down a little more every frame. Less gravity means longer, floatier jumps, like on the Moon!` },
+      { say: String.raw`Try it: make <code>double moon = 0.16;</code> and print it with cout.`,
+        try: { lang: 'cpp', starter: '', check(src, h) {
+          if (!/double\s+moon/.test(src)) return 'Declare it as double moon = 0.16;';
+          const r = h.run('cpp', src); if (r.error) return r.error;
+          if (norm(r.output) !== '0.16') return 'Print moon with cout << moon << endl;';
+        } } },
+      { say: String.raw`Now lower the gravity until you can float across the canyon. Take a running jump from the very edge!` },
+    ],
+    task: 'The canyon is 360 pixels wide. Lower <strong>gravity</strong> so you float across.',
+    world: { ground: [[0, 200], [560, 800]], flag: [740, 400], spikes: [[200, 360]] },
+    platforms: false, lockMsg: 'createPlatform is locked in this level. Change gravity instead.',
+    vars: { gravity: { def: 0.6, min: 0.12, max: 1.5, phys: 'g' } },
+    starter: String.raw`double gravity = 0.6;
+`,
+    hint: 'Smaller is floatier. Try something around 0.2.',
+    solution: String.raw`double gravity = 0.2;`,
+    require(r) {
+      if (r.vars.gravity === undefined) return 'Create a variable named gravity.';
+      if (typeof r.vars.gravity !== 'number' || !isFinite(r.vars.gravity)) return 'gravity must be a number.';
+    },
+  },
+
+  /* ======================= Java ======================= */
+  {
     id: 'java-shop', lang: 'java', type: 'console', badge: 'Console quest', title: 'The Sword Shop',
-    learn: String.raw`<p>Java code lives inside a class, and the program starts in <code>main</code>. <code>if</code> runs code only when a condition is true; <code>else</code> runs when it is false. <code>System.out.println</code> prints a line.</p><pre><code>if (hp &lt;= 0) {
+    learn: String.raw`<code>if (condition) { } else { }</code> picks one of two paths.</p><pre><code>if (hp &lt;= 0) {
     System.out.println("Game over");
 } else {
     System.out.println("Keep going");
 }</code></pre>`,
-    task: 'Print <strong>Buy sword</strong> if coins is at least the price, otherwise print <strong>Keep saving</strong>. The game also tests your code with only 30 coins.',
-    question: 'A sword costs 50 coins and you have 75. Should you buy it? Your code must decide with if / else.',
+    guide: [
+      { say: String.raw`<b>Java</b> runs Minecraft: Java Edition! Java code lives inside a <code>class</code>, and the program starts in <code>main</code>. <code>System.out.println</code> prints a line.` },
+      { say: String.raw`<code>if (condition) { ... } else { ... }</code> picks one of two paths. <code>&gt;=</code> means "greater than or equal".` },
+      { say: String.raw`Try it: print <b>Healthy</b> if hp is more than 5, otherwise print <b>Hurt</b>.`,
+        try: { lang: 'java', starter: 'int hp = 10;\n', check(src, h) {
+          if (!/\bif\s*\(/.test(src) || !/\belse\b/.test(src)) return 'Use if and else.';
+          const r = h.run('java', src); if (r.error) return r.error;
+          if (norm(r.output) !== 'Healthy') return 'With hp = 10 it should print Healthy.';
+          const r2 = h.run('java', src.replace(/hp\s*=\s*10/, 'hp = 2'));
+          if (r2.error || norm(r2.output) !== 'Hurt') return 'With hp = 2 it should print Hurt.';
+        } } },
+      { say: String.raw`The shopkeeper will test your code with other amounts of coins, so compare <code>coins</code> with <code>price</code>.` },
+    ],
+    task: 'Print <strong>Buy sword</strong> if coins is at least the price, otherwise <strong>Keep saving</strong>. The game also tests 30 coins.',
+    question: 'A sword costs 50 coins and you have 75. Should you buy it? Your code must decide.',
     expect: 'Buy sword',
     starter: String.raw`public class Main {
     public static void main(String[] args) {
         int coins = 75;
         int price = 50;
-        // use if / else to decide
+        // decide here
 
     }
 }
 `,
-    hint: 'if (coins >= price) { System.out.println("Buy sword"); } else { System.out.println("Keep saving"); }',
+    hint: 'Compare coins >= price in the if.',
     solution: String.raw`public class Main {
     public static void main(String[] args) {
         int coins = 75;
@@ -590,29 +1237,81 @@ double gravity = 0.6;
       if (!/coins\s*=\s*75/.test(src)) return 'Keep the line int coins = 75; so the game can test your code.';
       const r2 = ctx.run(src.replace(/coins\s*=\s*75/, 'coins = 30'));
       if (r2.error) return 'Test with 30 coins failed: ' + r2.error;
-      if (norm(r2.output) !== 'Keep saving') return 'Test with 30 coins printed "' + norm(r2.output) + '" but it should print Keep saving. Compare coins with price instead of a fixed answer.';
+      if (norm(r2.output) !== 'Keep saving') return 'Test with 30 coins printed "' + norm(r2.output) + '" but should print Keep saving.';
       ctx.log('Test: coins = 30 printed "Keep saving". Correct.', 'ok');
     },
   },
   {
+    id: 'java-shout', lang: 'java', type: 'console', badge: 'Console quest', title: 'Battle Cry',
+    learn: String.raw`<p>Strings have methods you call with a dot.</p><pre><code>String w = "Hi";
+w.length();       // 2
+w.toLowerCase();  // "hi"</code></pre>`,
+    guide: [
+      { say: String.raw`In Java, text is a <code>String</code>. Strings come with built-in <em>methods</em>: little functions you call with a dot after the variable.` },
+      { say: String.raw`<code>word.length()</code> tells you how many letters it has. <code>word.toUpperCase()</code> gives the word in CAPITALS.` },
+      { say: String.raw`Try it: print how many letters <code>pet</code> has using <code>length()</code>.`,
+        try: { lang: 'java', starter: 'String pet = "cat";\n', check(src, h) {
+          if (!/\.length\s*\(\s*\)/.test(src)) return 'Call pet.length()';
+          const r = h.run('java', src); if (r.error) return r.error;
+          if (norm(r.output) !== '3') return 'The console printed "' + norm(r.output) + '". Expected 3';
+        } } },
+      { say: String.raw`Now make the hero shout their name! The game will test another name too.` },
+    ],
+    task: 'Print the hero\'s <strong>name in capitals</strong> followed by <strong>!</strong> (PIXEL!). The game tests another name too.',
+    question: 'Shout the hero\'s battle cry!',
+    expect: 'PIXEL!',
+    starter: String.raw`public class Main {
+    public static void main(String[] args) {
+        String name = "Pixel";
+        // shout the name
+
+    }
+}
+`,
+    hint: 'Join name.toUpperCase() and "!" with +.',
+    solution: String.raw`public class Main {
+    public static void main(String[] args) {
+        String name = "Pixel";
+        System.out.println(name.toUpperCase() + "!");
+    }
+}`,
+    check(r, src, ctx) {
+      if (!/toUpperCase/.test(src)) return 'Use the toUpperCase() method.';
+      if (norm(r.output) !== 'PIXEL!') return 'The console should show exactly: PIXEL!';
+      if (!/name\s*=\s*"Pixel"/.test(src)) return 'Keep the line String name = "Pixel"; so the game can test your code.';
+      const r2 = ctx.run(src.replace(/name\s*=\s*"Pixel"/, 'name = "Ada"'));
+      if (r2.error || norm(r2.output) !== 'ADA!') return 'With name = "Ada" it should print ADA! Use the name variable.';
+      ctx.log('Test: name = "Ada" printed "ADA!". Correct.', 'ok');
+    },
+  },
+  {
     id: 'java-final', lang: 'java', type: 'platformer', badge: 'Final level', title: 'The Final Climb',
-    learn: String.raw`<p>Time to combine everything: a class, <code>main</code>, a <code>for</code> loop, variables and math. You can store numbers in variables to make your loop easier to read.</p><pre><code>int stepWidth = 75;
-for (int i = 0; i &lt; 6; i++) {
-    createPlatform(150 + i * 85, 370 - i * 25, stepWidth);
+    learn: String.raw`<p>Combine loops, variables and math to build anything.</p><pre><code>int gap = 100;
+for (int i = 0; i &lt; 3; i++) {
+    createPlatform(50 + i * gap, 300, 60);
 }</code></pre>`,
-    task: 'Reach the flag on the high ledge (top at y = 250, starting at x = 660). The floor is spikes. Build your own path with a loop.',
+    guide: [
+      { say: String.raw`The final level! You know variables, loops, functions and math. Time to combine them.` },
+      { say: String.raw`Plan first: you start on the ground at y = 400, and the ledge top is y = 250 at x = 660. The floor in between is spikes. Each jump climbs about 90 pixels and crosses about 140.` },
+      { say: String.raw`Warm-up: print <b>370, 340, 310</b> with a loop (start at 370 and subtract 30 each time).`,
+        try: { lang: 'java', starter: 'for (int i = 0; i < 3; i++) {\n    \n}\n', check(src, h) {
+          if (!/\b(for|while)\s*\(/.test(src)) return 'Use a loop.';
+          const r = h.run('java', src); if (r.error) return r.error;
+          if (norm(r.output) !== '370\n340\n310') return 'Expected 370, 340, 310. You printed: ' + (norm(r.output).replace(/\n/g, ', ') || 'nothing');
+        } } },
+      { say: String.raw`That's the pattern you need: x goes up, y goes down. Build your own path to the flag. You've got this!` },
+    ],
+    task: 'Reach the flag on the high ledge (top y = 250, starts at x = 660). The floor is spikes. Build your own path with a loop.',
     world: { ground: [[0, 120]], blocks: [{ x: 660, y: 250, w: 140, h: 200 }], spikes: [[120, 540]], flag: [760, 250] },
     platforms: true,
     starter: String.raw`public class Main {
     public static void main(String[] args) {
-        // FINAL LEVEL: reach the flag on the high ledge.
-        // You start on the ground at y = 400. The ledge top is y = 250.
         // Use a loop and createPlatform(x, y, width).
 
     }
 }
 `,
-    hint: 'Climb about 25 pixels per step while moving 85 pixels right: createPlatform(150 + i * 85, 370 - i * 25, 75) for i from 0 to 5.',
+    hint: 'Steps about 85 pixels apart that climb about 25 pixels each. Start the first step near x = 150, y = 370.',
     solution: String.raw`public class Main {
     public static void main(String[] args) {
         int stepWidth = 75;
@@ -686,7 +1385,7 @@ function scanPieces(src, commentChar) {
   let buf = '', i = 0;
   while (i < src.length) {
     const ch = src[i];
-    if (commentChar && ch === commentChar) break;
+    if (commentChar && src.startsWith(commentChar, i)) break;
     if (ch === '"' || ch === "'") {
       let fstr = false;
       if (/[fF]$/.test(buf) && !/[A-Za-z0-9_][fF]$/.test(buf)) { fstr = true; buf = buf.slice(0, -1); }
@@ -828,7 +1527,7 @@ function transpileCLike(src, lang) {
   const pieces = [];
   s.split('\n').forEach((line, li, arr) => {
     // keep // comments out of rewrites
-    const p = scanPieces(line, null);
+    const p = scanPieces(line, "//");
     p.forEach((x) => pieces.push(x));
     if (li < arr.length - 1) pieces.push({ t: 'code', v: '\n' });
   });
@@ -836,6 +1535,9 @@ function transpileCLike(src, lang) {
   code = code
     .replace(/\b(?:public\s+|final\s+)*class\s+\w+\s*\{/g, '{')
     .replace(/\b(?:public\s+|private\s+)?(?:static\s+)?(?:int|void)\s+main\s*\([^)]*\)\s*\{/g, 'function main() {')
+    .replace(/\b(?:(?:public|private|protected|static|final)\s+)*(?:void|int|long|short|float|double|char|bool|boolean|auto|String|std::string|string)\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*\{/g,
+      (m, name, params) => 'function ' + name + '(' + params.split(',').map((p) => (p.trim().match(/([A-Za-z_]\w*)\s*(?:\[\s*\])?$/) || ['', ''])[1]).filter(Boolean).join(', ') + ') {')
+    .replace(/\.length\s*\(\s*\)/g, '.length')
     .replace(/(?:std::)?cout\s*<<([^;]*);/g, (m, body) => '__cout(' + splitTop(body, '<<').join(', ') + ');')
     .replace(/(?:std::)?endl\b/g, '__ENDL')
     .replace(/System\.out\.println\s*\(/g, '__println(')
@@ -1116,7 +1818,7 @@ function step() {
   if (overlaps(p, { x: f.x - 4, y: -200, w: 30, h: f.y + 200 })) reachFlag();
 }
 
-function die() { game.deaths++; game.flash = 18; respawn(); }
+function die() { game.deaths++; game.flash = 18; respawn(); onFall(); }
 
 function drawGrid() {
   const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -1155,7 +1857,7 @@ function drawSolid(s) {
     ctx.fillStyle = s.color || '#c58a4a'; ctx.fillRect(s.x, s.y, s.w, s.h);
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     for (let xx = s.x + 18; xx < s.x + s.w; xx += 20) ctx.fillRect(xx, s.y, 2, s.h);
-    label(s, '.bridge');
+    label(s, s.name || '.bridge');
   } else if (s.kind === 'code') {
     ctx.fillStyle = s.color; ctx.globalAlpha *= 0.25; ctx.fillRect(s.x, s.y, s.w, s.h);
     ctx.globalAlpha = s.alpha !== undefined ? Math.max(0.12, s.alpha) : 1;
@@ -1201,9 +1903,9 @@ function drawPlayer() {
 
 function drawHud() {
   const ph = game.phys;
-  ctx.fillStyle = 'rgba(11,13,30,0.7)'; ctx.fillRect(W - 250, 6, 244, 22);
+  ctx.fillStyle = 'rgba(11,13,30,0.7)'; ctx.fillRect(W - 296, 6, 290, 22);
   ctx.fillStyle = '#9ea1cc'; ctx.font = '11px "JetBrains Mono", monospace'; ctx.textBaseline = 'middle';
-  ctx.fillText('gravity ' + ph.g.toFixed(2) + '  jump ' + ph.jump.toFixed(1) + '  falls ' + game.deaths, W - 242, 17);
+  ctx.fillText('gravity ' + ph.g.toFixed(2) + '  jump ' + ph.jump.toFixed(0) + '  speed ' + ph.speed + '  falls ' + game.deaths, W - 288, 17);
   if (game.hover) {
     const { x, y } = game.hover;
     ctx.strokeStyle = 'rgba(87,214,194,0.5)'; ctx.setLineDash([3, 3]);
@@ -1265,17 +1967,155 @@ holdButton('tJump', () => (game.jumpBuf = 8), () => {});
 /* ---------------- UI ---------------- */
 let done = new Set(store('ucsig-done') || []);
 let drafts = store('ucsig-drafts') || {};
+let tutSeen = new Set(store('ucsig-tut') || []);
 let current = 0;
 let hintShown = false;
 
 function saveProgress() { store('ucsig-done', [...done]); }
-function saveDraft() { drafts[LEVELS[current].id] = codeEl.value; store('ucsig-drafts', drafts); }
+function saveDraft() { drafts[LEVELS[current].id] = editor.get(); store('ucsig-drafts', drafts); }
 
+/* ----- Code editors (CodeMirror, with a plain textarea fallback) ----- */
+const CM_MODES = { js: 'javascript', py: 'python', html: 'htmlmixed', css: 'css', c: 'text/x-csrc', cpp: 'text/x-c++src', java: 'text/x-java' };
+function makeEditor(textarea, opts) {
+  if (window.CodeMirror) {
+    const cm = CodeMirror.fromTextArea(textarea, {
+      theme: 'byte', lineNumbers: opts.lineNumbers !== false, indentUnit: 4, tabSize: 4, indentWithTabs: false,
+      matchBrackets: true, autoCloseBrackets: true, autoCloseTags: true, styleActiveLine: opts.lineNumbers !== false,
+      lineWrapping: false, viewportMargin: opts.auto ? Infinity : 10,
+      extraKeys: {
+        Tab: (c) => (c.somethingSelected() ? c.indentSelection('add') : c.replaceSelection('    ', 'end')),
+        'Shift-Tab': 'indentLess',
+        'Ctrl-Enter': () => opts.onRun(), 'Cmd-Enter': () => opts.onRun(),
+      },
+    });
+    return {
+      get: () => cm.getValue(),
+      set: (v) => { cm.setValue(v); cm.clearHistory(); },
+      mode: (lang) => cm.setOption('mode', CM_MODES[lang]),
+      focus: () => { cm.focus(); cm.setCursor(cm.lineCount(), 0); },
+      onChange: (f) => cm.on('change', (c, ch) => { if (ch.origin !== 'setValue') f(); }),
+      refresh: () => cm.refresh(),
+    };
+  }
+  textarea.classList.add('plain-editor');
+  textarea.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); opts.onRun(); }
+    else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); textarea.setRangeText('    ', textarea.selectionStart, textarea.selectionEnd, 'end'); }
+  });
+  return {
+    get: () => textarea.value, set: (v) => { textarea.value = v; }, mode: () => {},
+    focus: () => textarea.focus(), onChange: (f) => textarea.addEventListener('input', f), refresh: () => {},
+  };
+}
+const editor = makeEditor($('code'), { onRun: () => runCurrent() });
+editor.onChange(saveDraft);
+const tryEditor = makeEditor($('tryCode'), { lineNumbers: false, auto: true, onRun: () => checkTry() });
+
+/* ----- Byte, the tutor ----- */
+const tut = { on: false, step: 0, solved: new Set() };
+const byteEl = $('byte');
+function byteMood(m) {
+  byteEl.className = 'byte ' + (m || '');
+  if (m === 'happy') { void byteEl.offsetWidth; byteEl.classList.add('bounce'); }
+}
+function byteSay(html, mood) {
+  if (tut.on) return;
+  $('say').innerHTML = html;
+  byteMood(mood);
+}
+const CHEERS = ['Woohoo! You did it!', 'Beautiful code!', 'That\'s how a real programmer does it!', 'Level smashed!', 'Nailed it! On to the next one?'];
+
+function renderTutor() {
+  const lv = LEVELS[current];
+  $('notes').hidden = tut.on;
+  $('tnav').hidden = !tut.on;
+  $('tryBox').hidden = true;
+  if (!tut.on) {
+    $('stepNum').textContent = '';
+    $('say').innerHTML = '<b>Your mission:</b> ' + lv.task;
+    byteMood('');
+    return;
+  }
+  const g = lv.guide[tut.step];
+  const last = tut.step === lv.guide.length - 1;
+  $('stepNum').textContent = (tut.step + 1) + ' / ' + lv.guide.length;
+  $('say').innerHTML = g.say;
+  byteMood(tut.step === 0 ? 'wave' : '');
+  $('dots').innerHTML = lv.guide.map((_, i) => '<i class="' + (i === tut.step ? 'on' : i < tut.step ? 'past' : '') + '"></i>').join('');
+  $('tBack').disabled = tut.step === 0;
+  const key = lv.id + ':' + tut.step;
+  if (g.try) {
+    $('tryBox').hidden = false;
+    $('tryFb').textContent = ''; $('tryFb').className = '';
+    $('tryOut').hidden = true;
+    $('tryAnswer').hidden = !g.try.answer;
+    $('tryCodeWrap').hidden = !!g.try.answer;
+    $('tryBtn').textContent = g.try.answer ? 'Check' : 'Run it';
+    if (g.try.answer) { $('tryAnswer').value = ''; }
+    else {
+      tryEditor.mode(g.try.lang);
+      tryEditor.set(g.try.starter || '');
+      $('tryLang').textContent = LANGS[g.try.lang].short;
+      $('tryLang').style.background = LANGS[g.try.lang].color;
+      setTimeout(() => tryEditor.refresh(), 0);
+    }
+    $('tNext').textContent = tut.solved.has(key) ? (last ? 'Let\'s play!' : 'Next') : 'Skip';
+  } else {
+    $('tNext').textContent = last ? 'Let\'s play!' : 'Next';
+  }
+}
+
+function tryRun(lang, src) { return runScript({ lang, platforms: true }, src); }
+function checkTry() {
+  const lv = LEVELS[current];
+  const g = lv.guide[tut.step];
+  if (!g || !g.try) return;
+  const input = g.try.answer ? $('tryAnswer').value.trim() : tryEditor.get();
+  if (!input.trim()) { $('tryFb').textContent = 'Type your answer first.'; $('tryFb').className = 'warn'; return; }
+  if (!g.try.answer && ['js', 'py', 'c', 'cpp', 'java'].includes(g.try.lang)) {
+    const r = tryRun(g.try.lang, input);
+    const out = r.error ? r.error : norm(r.output) || '(nothing was printed)';
+    $('tryOut').textContent = out;
+    $('tryOut').className = r.error ? 'err' : '';
+    $('tryOut').hidden = false;
+  }
+  let problem;
+  try { problem = g.try.check(input, { run: tryRun }); } catch (e) { problem = friendlyError(e, g.try.lang); }
+  if (problem) {
+    $('tryFb').textContent = problem; $('tryFb').className = 'warn';
+    byteMood('think');
+    return;
+  }
+  tut.solved.add(lv.id + ':' + tut.step);
+  $('tryFb').textContent = 'Correct! Press Next.'; $('tryFb').className = 'ok';
+  byteMood('happy');
+  $('tNext').textContent = tut.step === lv.guide.length - 1 ? 'Let\'s play!' : 'Next';
+}
+
+function endTutorial() {
+  const lv = LEVELS[current];
+  tut.on = false;
+  tutSeen.add(lv.id); store('ucsig-tut', [...tutSeen]);
+  renderTutor();
+  byteSay('<b>Your mission:</b> ' + lv.task + '<br><span class="sub">Write your code in the editor, then press Run. Stuck? Press Hint and I\'ll help.</span>', '');
+  editor.focus();
+}
+$('tNext').addEventListener('click', () => {
+  if (tut.step >= LEVELS[current].guide.length - 1) endTutorial();
+  else { tut.step++; renderTutor(); }
+});
+$('tBack').addEventListener('click', () => { if (tut.step > 0) { tut.step--; renderTutor(); } });
+$('tSkip').addEventListener('click', endTutorial);
+$('replayTut').addEventListener('click', () => { tut.on = true; tut.step = 0; renderTutor(); });
+$('tryBtn').addEventListener('click', checkTry);
+$('tryAnswer').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); checkTry(); } });
+
+/* ----- Map ----- */
 function updateProgress() {
   $('progText').textContent = done.size + ' / ' + LEVELS.length + ' levels';
   $('progBar').style.width = (done.size / LEVELS.length) * 100 + '%';
   const nextIdx = LEVELS.findIndex((l) => !done.has(l.id));
-  $('continueBtn').textContent = done.size === 0 ? 'Start level 1' : nextIdx < 0 ? 'Replay level 1' : 'Continue: level ' + (nextIdx + 1);
+  $('continueBtn').textContent = done.size === 0 ? 'Start level 1 with Byte' : nextIdx < 0 ? 'Replay level 1' : 'Continue: level ' + (nextIdx + 1);
 }
 
 function renderMap() {
@@ -1302,36 +2142,6 @@ function showMap() {
   window.scrollTo(0, 0);
 }
 
-const codeEl = $('code');
-function updateGutter() {
-  const n = codeEl.value.split('\n').length;
-  let s = ''; for (let i = 1; i <= n; i++) s += i + '\n';
-  $('gutter').textContent = s;
-  $('gutter').scrollTop = codeEl.scrollTop;
-}
-codeEl.addEventListener('input', () => { updateGutter(); saveDraft(); });
-codeEl.addEventListener('scroll', () => { $('gutter').scrollTop = codeEl.scrollTop; });
-codeEl.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); runCurrent(); return; }
-  if (e.key === 'Tab' && !e.shiftKey) {
-    e.preventDefault();
-    insertText('    ');
-  } else if (e.key === 'Enter') {
-    const v = codeEl.value, pos = codeEl.selectionStart;
-    const lineStart = v.lastIndexOf('\n', pos - 1) + 1;
-    const line = v.slice(lineStart, pos);
-    let indent = line.match(/^\s*/)[0];
-    if (/[:{]\s*$/.test(line)) indent += '    ';
-    e.preventDefault();
-    insertText('\n' + indent);
-  }
-});
-function insertText(t) {
-  const s = codeEl.selectionStart, en = codeEl.selectionEnd;
-  codeEl.setRangeText(t, s, en, 'end');
-  codeEl.dispatchEvent(new Event('input'));
-}
-
 const consoleEl = $('consoleOut');
 function log(text, cls) {
   const span = document.createElement('span');
@@ -1354,10 +2164,15 @@ function openLevel(i) {
   $('fname').textContent = L.file;
   $('prevBtn').disabled = current === 0;
   $('nextBtn').disabled = current === LEVELS.length - 1;
-  $('lesson').innerHTML = '<h3>LEARN ' + esc(L.name.toUpperCase()) + '</h3>' + lv.learn + '<p class="task">' + lv.task + '</p>';
-  codeEl.value = drafts[lv.id] !== undefined ? drafts[lv.id] : lv.starter;
-  updateGutter();
+  $('cheat').innerHTML = '<h3>' + esc(L.name.toUpperCase()) + ' CHEAT SHEET</h3>' + lv.learn;
+  editor.mode(lv.lang);
+  editor.set(drafts[lv.id] !== undefined ? drafts[lv.id] : lv.starter);
+  setTimeout(() => editor.refresh(), 0);
   clearConsole();
+
+  tut.on = !tutSeen.has(lv.id) && !done.has(lv.id);
+  tut.step = 0;
+  renderTutor();
 
   const isPlat = lv.type === 'platformer';
   $('gameWrap').hidden = !isPlat;
@@ -1373,7 +2188,7 @@ function openLevel(i) {
   }
   if (lv.type === 'web') {
     renderPreview(null);
-    log('Write HTML on the left and press Run to see it in the browser.', 'info');
+    log('Write HTML in the editor and press Run to see it in the browser.', 'info');
   }
   if (isPlat) {
     game.level = lv; game.won = false; game.deaths = 0; game.codeOk = !lv.require;
@@ -1400,34 +2215,33 @@ function renderPreview(doc) {
 
 function runCurrent() {
   const lv = LEVELS[current];
-  const src = codeEl.value;
+  const src = editor.get();
   clearConsole();
   $('win').hidden = true;
   log('> Running ' + LANGS[lv.lang].file, 'info');
   const r = runCode(lv, src);
   (r.notes || []).forEach(([cls, t]) => log(t, cls));
   if (r.output) log(r.output, 'out');
-  if (r.error) { log(r.error, 'err'); return; }
-
-  if (lv.type === 'console') {
-    if (!norm(r.output)) log('(nothing was printed)', 'info');
-    const ctxObj = { run: (s) => runCode(lv, s), log };
-    const problem = lv.check(r, src, ctxObj);
-    if (problem) { log(problem, 'warn'); return; }
-    complete('Correct! The console printed exactly what the quest asked for.');
+  if (r.error) {
+    log(r.error, 'err');
+    byteSay('Uh oh, an error! That\'s normal, every programmer gets them. Read the red line in the console: it says what went wrong.', 'sad');
     return;
   }
-  if (lv.type === 'web') {
-    renderPreview(r.doc);
-    const problem = lv.check(r, src);
-    if (problem) { log(problem, 'warn'); return; }
-    complete('Your title screen is live. Try clicking around in the preview.');
+
+  if (lv.type === 'console' || lv.type === 'web') {
+    if (lv.type === 'console' && !norm(r.output)) log('(nothing was printed)', 'info');
+    if (lv.type === 'web') renderPreview(r.doc);
+    const ctxObj = { run: (s) => runCode(lv, s), log };
+    const problem = lv.check(r, src, ctxObj);
+    if (problem) { log(problem, 'warn'); byteSay('Almost! ' + esc(problem), 'think'); return; }
+    complete(lv.type === 'web' ? 'Your page is live in the preview.' : 'The console printed exactly what the quest asked for.');
     return;
   }
   // platformer
   const problem = lv.require ? lv.require(r, src) : null;
   if (problem) {
     log(problem, 'warn');
+    byteSay('Hmm. ' + esc(problem), 'think');
     game.codeOk = false;
     setPhysics(lv, null); buildWorld(lv, null);
   } else {
@@ -1444,9 +2258,10 @@ function runCurrent() {
     }
     if (lv.lang === 'css') {
       const door = game.solids.find((s) => s.id === 'door');
-      if (door && !door.hidden && door.alpha === 0) log('The door is invisible, but still solid! opacity only changes how it looks. Try display: none;', 'warn');
+      if (door && !door.hidden && door.alpha === 0) log('The door is invisible, but still solid! opacity only changes how it looks.', 'warn');
     }
     log('Code applied. Now reach the flag!', 'ok');
+    byteSay('Your code changed the level! Now play: arrow keys to move, Space to jump. Get me to the flag!', 'happy');
   }
   game.won = false;
   respawn();
@@ -1454,22 +2269,27 @@ function runCurrent() {
 }
 
 function reachFlag() {
-  const lv = LEVELS[current];
   if (!game.codeOk) {
     game.won = false;
     respawn();
     log('You reached the flag, but your code does not meet the level goal yet. Fix it and run again.', 'warn');
+    byteSay('Sneaky! But this level wants you to solve it with code. Check the console.', 'think');
     return;
   }
   game.won = true;
   game.keys.left = game.keys.right = false;
   complete(game.deaths === 0 ? 'Flawless: no falls. Your code built the way through.' : 'Made it after ' + game.deaths + ' fall' + (game.deaths > 1 ? 's' : '') + '. Your code built the way through.');
 }
+function onFall() {
+  if (game.deaths === 3) byteSay('Ouch! If you\'re stuck, hover over the game to check the numbers, or press Hint.', 'sad');
+}
 
 function complete(msg) {
   const lv = LEVELS[current];
   done.add(lv.id); saveProgress(); updateProgress();
   log('LEVEL CLEAR: ' + lv.title, 'ok');
+  tut.on = false; renderTutor();
+  byteSay(CHEERS[Math.floor(Math.random() * CHEERS.length)], 'happy');
   $('winMsg').textContent = msg;
   $('winNext').textContent = current === LEVELS.length - 1 ? 'Back to all levels' : 'Next level →';
   if (done.size === LEVELS.length && current === LEVELS.length - 1) $('winMsg').textContent = msg + ' You finished every level in all seven languages!';
@@ -1478,19 +2298,25 @@ function complete(msg) {
 }
 
 $('runBtn').addEventListener('click', runCurrent);
-$('hintBtn').addEventListener('click', () => { hintShown = true; log('Hint: ' + LEVELS[current].hint, 'warn'); });
+$('hintBtn').addEventListener('click', () => {
+  hintShown = true;
+  if (tut.on) endTutorial();
+  log('Hint: ' + LEVELS[current].hint, 'warn');
+  byteSay('<b>Hint:</b> ' + esc(LEVELS[current].hint), 'think');
+});
 $('solBtn').addEventListener('click', () => {
   const b = $('solBtn');
   if (!hintShown && b.dataset.confirm !== '1') {
-    b.dataset.confirm = '1'; b.textContent = 'Sure? Click again';
+    b.dataset.confirm = '1'; b.textContent = 'Sure? Try a hint first';
     setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Show solution'; }, 2500);
     return;
   }
   b.dataset.confirm = ''; b.textContent = 'Show solution';
-  codeEl.value = LEVELS[current].solution; updateGutter(); saveDraft();
+  editor.set(LEVELS[current].solution); saveDraft();
   log('Solution loaded into the editor. Read it line by line, then press Run.', 'info');
+  byteSay('Here\'s one way to solve it. Read each line and figure out <b>why</b> it works, then press Run.', '');
 });
-$('resetCode').addEventListener('click', () => { codeEl.value = LEVELS[current].starter; updateGutter(); saveDraft(); log('Code reset to the starting version.', 'info'); });
+$('resetCode').addEventListener('click', () => { editor.set(LEVELS[current].starter); saveDraft(); log('Code reset to the starting version.', 'info'); });
 $('clearBtn').addEventListener('click', clearConsole);
 $('prevBtn').addEventListener('click', () => openLevel(current - 1));
 $('nextBtn').addEventListener('click', () => openLevel(current + 1));
@@ -1500,15 +2326,12 @@ $('winStay').addEventListener('click', () => { $('win').hidden = true; });
 $('winNext').addEventListener('click', () => { if (current === LEVELS.length - 1) showMap(); else openLevel(current + 1); });
 $('continueBtn').addEventListener('click', () => { const n = LEVELS.findIndex((l) => !done.has(l.id)); openLevel(n < 0 ? 0 : n); });
 
-// Keep the open level across live updates of the page.
-window.claude?.hot?.snapshot?.(() => ({ level: $('playScreen').hidden ? null : current }));
-function start(data) {
+function start() {
   setupCanvas();
   renderMap();
   requestAnimationFrame(loop);
-  if (data && typeof data.level === 'number') openLevel(data.level);
 }
-window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+start();
 window.__ucsig = { LEVELS, runCode, game, openLevel, runCurrent, step };
 })();
 </script>
